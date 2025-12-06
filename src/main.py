@@ -1,3 +1,5 @@
+import torchvision.transforms as transforms
+from datasets.TinyImageNetDataset import TinyImageNetDataset
 import argparse
 
 from train import GestureTrainer
@@ -49,3 +51,42 @@ if __name__ == "__main__":
         model = GestureTest(configer)
         model.init_model()
         model.test()
+
+
+root = "datasets/tiny-imagenet-200"
+
+normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+
+train_transform = transforms.Compose([
+    transforms.Resize((72, 72)),
+    transforms.RandomResizedCrop(64, scale=(0.8, 1.0)),
+    transforms.RandomHorizontalFlip(p=0.5),
+    transforms.RandomRotation(10),
+    transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1),
+    transforms.ToTensor(),
+    normalize,
+])
+
+val_transform = transforms.Compose([
+    transforms.Resize((64, 64)),
+    transforms.ToTensor(),
+    normalize,
+])
+
+train_dataset = TinyImageNetDataset(root, split='train', transform=train_transform)
+val_dataset = TinyImageNetDataset(root, split='val', transform=val_transform)
+
+train_loader = DataLoader(train_dataset, batch_size=8, shuffle=True, num_workers=2)
+val_loader = DataLoader(val_dataset, batch_size=8, shuffle=False, num_workers=2)
+
+print(f"Train size: {len(train_dataset)}")
+print(f"Val size: {len(val_dataset)}")
+print(f"Классов: {len(train_dataset.class_names)}")
+
+
+
+        elif split == 'test':
+            test_dir = os.path.join(self.root, split, 'images')
+            for img_name in os.listdir(test_dir):
+                img_path = os.path.join(test_dir, img_name)
+                self.samples.append((img_path, -1))  # тест без меток
