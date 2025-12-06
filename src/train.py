@@ -1,49 +1,24 @@
-from pathlib import Path
-
-import numpy as np
 import torch
-import torch.nn as nn
+import numpy as np
+import torchvision.transforms as transforms
+
+from models.temporal import BasicBlock, ResNet18
+#from pathlib import Path
+
+
+
+#import torch.nn as nn
 
 from torch.utils.data import DataLoader
-import imgaug.augmenters as iaa
 
 # Import Datasets
-from datasets.Bukva import Bukva
-from datasets.Briareo import Briareo
-from datasets.NVGestures import NVGesture
-from models.model_utilizer import ModuleUtilizer
-
-# Import Model
-from models.temporal import GestureTransoformer
-from torch.optim.lr_scheduler import MultiStepLR
-
-# Import loss
-
-# Import Utils
-from tqdm import tqdm
-from utils.average_meter import AverageMeter
-from tensorboardX import SummaryWriter
+from datasets.TinyImageNetDataset import TinyImageNetDataset
 
 # Setting seeds
 def worker_init_fn(worker_id):
     np.random.seed(torch.initial_seed() % 2 ** 32)
 
-class GestureTrainer(object):
-    """Gesture Recognition Train class
-
-    Attributes:
-        configer (Configer): Configer object, contains procedure configuration.
-        train_loader (torch.utils.data.DataLoader): Train data loader variable
-        val_loader (torch.utils.data.DataLoader): Val data loader variable
-        test_loader (torch.utils.data.DataLoader): Test data loader variable
-        net (torch.nn.Module): Network used for the current procedure
-        lr (int): Learning rate value
-        optimizer (torch.nn.optim.optimizer): Optimizer for training procedure
-        iters (int): Starting iteration number, not zero if resuming training
-        epoch (int): Starting epoch number, not zero if resuming training
-        scheduler (torch.optim.lr_scheduler): Scheduler to utilize during training
-
-    """
+class modelTrainer(object):
 
     def __init__(self, configer):
         self.configer = configer
@@ -105,13 +80,6 @@ class GestureTrainer(object):
     def init_model(self):
         """Initialize model and other data for procedure"""
 
-        if self.optical_flow is True:
-            self.in_planes = 2
-        elif self.data_type in ["depth", "ir"]:
-            self.in_planes = 1
-        else:
-            self.in_planes = 3
-
         self.loss = nn.CrossEntropyLoss().to(self.device)
 
         # Selecting correct model and normalization variable based on type variable
@@ -148,30 +116,27 @@ class GestureTrainer(object):
             self.optimizer.load_state_dict(optim_dict)
 
         # Selecting Dataset and DataLoader
-        if self.dataset == "briareo":
-            Dataset = Briareo
-            self.train_transforms = iaa.Sequential([
-                iaa.Resize((0.85, 1.15)),
-                iaa.CropToFixedSize(width=190, height=190),
-                iaa.Rotate((-15, 15))
+        if self.dataset == "tinyimagenetdataset":
+            Dataset = TinyImageNetDataset
+            
+            normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+
+            self.train_transforms = transforms.Compose([
+                transforms.Resize((72, 72)),
+                transforms.RandomResizedCrop(64, scale=(0.8, 1.0)),
+                transforms.RandomHorizontalFlip(p=0.5),
+                transforms.RandomRotation(10),
+                transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1),
+                transforms.ToTensor(),
+                normalize,
             ])
-            self.val_transforms = iaa.CenterCropToFixedSize(200, 200)
-        elif self.dataset == "bukva":
-            Dataset = Bukva
-            self.train_transforms = iaa.Sequential([
-                iaa.Resize((0.85, 1.15)),
-                iaa.CropToFixedSize(width=190, height=190),
-                iaa.Rotate((-15, 15))
+
+            self.val_transforms = transforms.Compose([
+                transforms.Resize((64, 64)),
+                transforms.ToTensor(),
+                normalize,
             ])
-            self.val_transforms = iaa.CenterCropToFixedSize(200, 200)
-        elif self.dataset == "nvgestures":
-            Dataset = NVGesture
-            self.train_transforms = iaa.Sequential([
-                iaa.Resize((0.8, 1.2)),
-                iaa.CropToFixedSize(width=256, height=192),
-                iaa.Rotate((-15, 15))
-            ])
-            self.val_transforms = iaa.CenterCropToFixedSize(256, 192)
+            
         else:
             raise NotImplementedError(f"Dataset not supported: {self.configer.get('dataset')}")
 

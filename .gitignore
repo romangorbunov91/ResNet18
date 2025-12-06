@@ -3,6 +3,7 @@
 
 !.gitignore
 !/src/
+!/scratch/
 
 !/README.md
 !/requirements.txt
