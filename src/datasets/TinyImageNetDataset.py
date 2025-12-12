@@ -61,4 +61,4 @@ class TinyImageNetDataset(Dataset):
         img_path, label = self.samples[idx]
         img = Image.open(img_path).convert('RGB')
         img = self.transform(img)
-        return img, label
+        return img, torch.tensor(label)

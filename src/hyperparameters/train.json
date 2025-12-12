@@ -4,6 +4,7 @@
     "epochs": 10,
     "phase": "train",
     "data": {
+      "n_classes": 200,
       "data_path": "././datasets/tiny-imagenet-200"
     },
     "solver": {

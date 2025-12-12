@@ -4,7 +4,16 @@ import torch.nn.functional as F
 from typing import List, Tuple, Optional
 
 class BasicBlock(nn.Module):
-    expansion = 1  # не используется в ResNet18 (всегда 1), но для совместимости
+    """
+    Базовый блок ResNet с residual connection.
+    
+    Args:
+        in_channels (int): количество входных каналов.
+        out_channels (int): количество выходных каналов.
+        stride (int): шаг свертки (по умолчанию 1).
+        downsample (nn.Module): слой для изменения размерности (если нужно).
+    """
+    expansion = 1  # не используется в ResNet18 (всегда 1), но для совместимости.
 
     def __init__(self, in_channels: int, out_channels: int, stride: int = 1, downsample: Optional[nn.Module] = None):
         super().__init__()
@@ -36,30 +45,27 @@ class BasicBlock(nn.Module):
 
         return out
 
-
 class ResNet18(nn.Module):
-    def __init__(self, num_classes: int = 200, zero_init_residual: bool = False):
+    def __init__(self, num_classes: int, zero_init_residual: bool = False):
         super().__init__()
 
-        # initial layers (before layers of blocks)
+        # initial layers (before layers of blocks).
         self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3, bias=False)
         self.bn1 = nn.BatchNorm2d(64)
         self.relu = nn.ReLU(inplace=True)
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
 
-        # layer1: no downsampling (stride=1), 2 blocks
+        # layer1: no downsampling (stride=1), 2 blocks.
         self.layer1 = self._make_layer(64, 64, blocks=2, stride=1)
-        # layer2: downsampling (stride=2), 2 blocks
+        # layer2: downsampling (stride=2), 2 blocks.
         self.layer2 = self._make_layer(64, 128, blocks=2, stride=2)
-        # layer3
         self.layer3 = self._make_layer(128, 256, blocks=2, stride=2)
-        # layer4
         self.layer4 = self._make_layer(256, 512, blocks=2, stride=2)
 
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
         self.fc = nn.Linear(512 * BasicBlock.expansion, num_classes)
 
-        # Init weights (optional, but recommended)
+        # Init weights (optional, but recommended).
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 nn.init.kaiming_normal_(m.weight, mode="fan_out", nonlinearity="relu")
@@ -67,7 +73,7 @@ class ResNet18(nn.Module):
                 nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias, 0)
 
-        # Zero-init batch norm in residual branches (improves convergence)
+        # Zero-init batch norm in residual branches (improves convergence).
         if zero_init_residual:
             for m in self.modules():
                 if isinstance(m, BasicBlock):

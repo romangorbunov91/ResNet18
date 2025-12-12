@@ -1,8 +1,9 @@
 import torch
+import torch.nn as nn
 import numpy as np
 import torchvision.transforms as transforms
 from tqdm import tqdm
-#from models.temporal import BasicBlock, ResNet18
+from models.model_structure import ResNet18
 #from pathlib import Path
 
 
@@ -11,8 +12,11 @@ from tqdm import tqdm
 
 from torch.utils.data import DataLoader
 
-# Import Datasets
+# Import Datasets.
 from datasets.TinyImageNetDataset import TinyImageNetDataset
+
+# Import Model.
+from models.model_utilizer import ModuleUtilizer
 
 # Setting seeds
 def worker_init_fn(worker_id):
@@ -46,7 +50,7 @@ class ResNet18Trainer(object):
 
         # Module load and save utility
         self.device = self.configer.get("device")
-        #self.model_utility = ModuleUtilizer(self.configer)      #: Model utility for load, save and update optimizer
+        self.model_utility = ModuleUtilizer(self.configer)      #: Model utility for load, save and update optimizer
         self.net = None
         self.lr = None
 
@@ -71,20 +75,13 @@ class ResNet18Trainer(object):
 
     def init_model(self):
         """Initialize model and other data for procedure"""
-        '''
+        
         self.loss = nn.CrossEntropyLoss().to(self.device)
 
-        # Selecting correct model and normalization variable based on type variable
-        self.net = GestureTransoformer(self.backbone, self.in_planes, self.n_classes,
-                                       pretrained=self.configer.get("network", "pretrained"),
-                                       n_head=self.configer.get("network", "n_head"),
-                                       dropout_backbone=self.configer.get("network", "dropout2d"),
-                                       dropout_transformer=self.configer.get("network", "dropout1d"),
-                                       dff=self.configer.get("network", "ff_size"),
-                                       n_module=self.configer.get("network", "n_module")
-                                       )
+        # Selecting correct model and normalization variable based on type variable.
+        self.net = ResNet18(num_classes=self.configer.get('data', 'n_classes'))
 
-        # Initializing training
+        # Initializing training.
         self.iters = 0
         self.epoch = None
         phase = self.configer.get('phase')
@@ -100,13 +97,13 @@ class ResNet18Trainer(object):
 
         # ToDo Restore optimizer and scheduler from checkpoint
         self.optimizer, self.lr = self.model_utility.update_optimizer(self.net, self.iters)
-        self.scheduler = MultiStepLR(self.optimizer, self.configer["solver", "decay_steps"], gamma=0.1)
+        #self.scheduler = MultiStepLR(self.optimizer, self.configer["solver", "decay_steps"], gamma=0.1)
 
         #  Resuming training, restoring optimizer value
         if optim_dict is not None:
             print("Resuming training from epoch {}.".format(self.epoch))
             self.optimizer.load_state_dict(optim_dict)
-        '''
+        
         # Selecting Dataset and DataLoader
         if self.dataset == "tinyimagenetdataset":
             Dataset = TinyImageNetDataset
@@ -132,7 +129,7 @@ class ResNet18Trainer(object):
         else:
             raise NotImplementedError(f"Dataset not supported: {self.configer.get('dataset')}")
 
-        # Setting Dataloaders
+        # Setting Dataloaders.
         self.train_loader = DataLoader(
             Dataset(self.data_path, split="train", transform=self.train_transforms),
             batch_size=self.configer.get('data', 'batch_size'),
@@ -150,10 +147,7 @@ class ResNet18Trainer(object):
         
         print(f"Train size: {len(self.train_loader.dataset)}")
         print(f"Val size: {len(self.val_loader.dataset)}")
-        print(f"Классов: {len(self.train_loader.dataset.class_names)}")
-        
-        '''
-        
+        print(f"Классов: {len(self.train_loader.dataset.class_names)}")       
         
         self.net.train()
         for data_tuple in tqdm(self.train_loader, desc="Train"):
@@ -177,14 +171,13 @@ class ResNet18Trainer(object):
             self.iters += 1
             self.update_metrics("train", loss.item(), inputs.size(0),
                                 float((predicted==correct).sum()) / len(correct))
-            '''
+
     def __val(self):
         """Validation function."""
         self.net.eval()
 
         with torch.no_grad():
-            # for i, data_tuple in enumerate(tqdm(self.val_loader, desc="Val", postfix=str(self.accuracy["val"].avg))):
-            for i, data_tuple in enumerate(tqdm(self.val_loader, desc="Val", postfix=""+str(np.random.randint(200)))):
+            for data_tuple in tqdm(self.val_loader, desc="Val", postfix=""+str(np.random.randint(200))):
                 """
                 input, gt
                 """
@@ -217,7 +210,7 @@ class ResNet18Trainer(object):
 
     def train(self):
         self.__train()
-        '''
+        
         for n in range(self.configer.get("epochs")):
             print("Starting epoch {}".format(self.epoch + 1))
             self.__train()
@@ -227,7 +220,7 @@ class ResNet18Trainer(object):
                       .format(self.configer.get("checkpoints", "early_stop"), n))
                 break
             self.epoch += 1
-        '''
+        
     def update_metrics(self, split: str, loss, bs, accuracy=None):
         self.losses[split].update(loss, bs)
         if accuracy is not None:
