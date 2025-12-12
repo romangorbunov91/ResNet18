@@ -5,5 +5,12 @@
     "phase": "train",
     "data": {
       "data_path": "././datasets/tiny-imagenet-200"
+    },
+    "solver": {
+      "type": "AdamW",
+      "workers": 4,
+      "weight_decay": 0.0001,
+      "base_lr": 0.0001,
+      "decay_steps": [50, 75]
     }
 }

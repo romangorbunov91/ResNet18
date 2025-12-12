@@ -1,8 +1,8 @@
 import torch
 import numpy as np
 import torchvision.transforms as transforms
-
-from models.temporal import BasicBlock, ResNet18
+from tqdm import tqdm
+#from models.temporal import BasicBlock, ResNet18
 #from pathlib import Path
 
 
@@ -18,13 +18,13 @@ from datasets.TinyImageNetDataset import TinyImageNetDataset
 def worker_init_fn(worker_id):
     np.random.seed(torch.initial_seed() % 2 ** 32)
 
-class modelTrainer(object):
+class ResNet18Trainer(object):
 
     def __init__(self, configer):
         self.configer = configer
 
         self.data_path = configer.get("data", "data_path")      #: str: Path to data directory
-
+        '''
         # Losses
         self.losses = {
             'train': AverageMeter(),                      #: Train loss avg meter
@@ -38,7 +38,7 @@ class modelTrainer(object):
             'val': AverageMeter(),                        #: Val accuracy avg meter
             'test': AverageMeter()                        #: Test accuracy avg meter
         }
-
+        '''
         # DataLoaders
         self.train_loader = None
         self.val_loader = None
@@ -46,7 +46,7 @@ class modelTrainer(object):
 
         # Module load and save utility
         self.device = self.configer.get("device")
-        self.model_utility = ModuleUtilizer(self.configer)      #: Model utility for load, save and update optimizer
+        #self.model_utility = ModuleUtilizer(self.configer)      #: Model utility for load, save and update optimizer
         self.net = None
         self.lr = None
 
@@ -57,29 +57,21 @@ class modelTrainer(object):
         self.train_transforms = None
         self.val_transforms = None
         self.loss = None
-
+        
+        self.dataset = self.configer.get("dataset").lower()         #: str: Type of dataset
+        '''
         # Tensorboard and Metrics
         self.tbx_summary = SummaryWriter(str(Path(configer.get('checkpoints', 'tb_path'))  #: Summary Writer plot
                                              / configer.get("dataset")                     #: data with TensorboardX
                                              / configer.get('checkpoints', 'save_name')))
         self.tbx_summary.add_text('parameters', str(self.configer).replace("\n", "\n\n"))
         self.save_iters = self.configer.get('checkpoints', 'save_iters')    #: int: Saving ratio
+        '''
 
-        # Other useful data
-        self.backbone = self.configer.get("network", "backbone")     #: str: Backbone type
-        self.in_planes = None                                       #: int: Input channels
-        self.clip_length = self.configer.get("data", "n_frames")    #: int: Number of frames per sequence
-        self.n_classes = self.configer.get("data", "n_classes")     #: int: Total number of classes for dataset
-        self.data_type = self.configer.get("data", "type")          #: str: Type of data (rgb, depth, ir, leapmotion)
-        self.dataset = self.configer.get("dataset").lower()         #: str: Type of dataset
-        self.optical_flow = self.configer.get("data", "optical_flow")
-        if self.optical_flow is None:
-            self.optical_flow = True
-        self.scheduler = None
 
     def init_model(self):
         """Initialize model and other data for procedure"""
-
+        '''
         self.loss = nn.CrossEntropyLoss().to(self.device)
 
         # Selecting correct model and normalization variable based on type variable
@@ -114,7 +106,7 @@ class modelTrainer(object):
         if optim_dict is not None:
             print("Resuming training from epoch {}.".format(self.epoch))
             self.optimizer.load_state_dict(optim_dict)
-
+        '''
         # Selecting Dataset and DataLoader
         if self.dataset == "tinyimagenetdataset":
             Dataset = TinyImageNetDataset
@@ -142,34 +134,33 @@ class modelTrainer(object):
 
         # Setting Dataloaders
         self.train_loader = DataLoader(
-            Dataset(self.configer, self.data_path, split="train", data_type=self.data_type,
-                    transforms=self.train_transforms, n_frames=self.clip_length, optical_flow=self.optical_flow),
-            batch_size=self.configer.get('data', 'batch_size'), shuffle=True, drop_last=True,
-            num_workers=self.configer.get('solver', 'workers'), pin_memory=True, worker_init_fn=worker_init_fn)
+            Dataset(self.data_path, split="train", transform=self.train_transforms),
+            batch_size=self.configer.get('data', 'batch_size'),
+            shuffle=True,
+            num_workers=self.configer.get('solver', 'workers'))
+        
         self.val_loader = DataLoader(
-            Dataset(self.configer, self.data_path, split="val", data_type=self.data_type,
-                    transforms=self.val_transforms, n_frames=self.clip_length, optical_flow=self.optical_flow),
-            batch_size=self.configer.get('data', 'batch_size'), shuffle=False, drop_last=True,
-            num_workers=self.configer.get('solver', 'workers'), pin_memory=True, worker_init_fn=worker_init_fn)
-        if self.dataset == "nvgestures":
-            self.test_loader = None
-        else:
-            self.test_loader = DataLoader(
-                Dataset(self.configer, self.data_path, split="test", data_type=self.data_type,
-                        transforms=self.val_transforms, n_frames=self.clip_length, optical_flow=self.optical_flow),
-                batch_size=1, shuffle=False, drop_last=True,
-                num_workers=self.configer.get('solver', 'workers'), pin_memory=True, worker_init_fn=worker_init_fn)
+            Dataset(self.data_path, split="val", transform=self.val_transforms),
+            batch_size=self.configer.get('data', 'batch_size'),
+            shuffle=False,
+            num_workers=self.configer.get('solver', 'workers'))
 
     def __train(self):
         """Train function for every epoch."""
-
+        
+        print(f"Train size: {len(self.train_loader.dataset)}")
+        print(f"Val size: {len(self.val_loader.dataset)}")
+        print(f"Классов: {len(self.train_loader.dataset.class_names)}")
+        
+        '''
+        
+        
         self.net.train()
         for data_tuple in tqdm(self.train_loader, desc="Train"):
             """
             input, gt
             """
-            inputs = data_tuple[0].to(self.device)
-            gt = data_tuple[1].to(self.device)
+            inputs, gt = data_tuple[0].to(self.device), data_tuple[1].to(self.device)
 
             output = self.net(inputs)
 
@@ -186,7 +177,7 @@ class modelTrainer(object):
             self.iters += 1
             self.update_metrics("train", loss.item(), inputs.size(0),
                                 float((predicted==correct).sum()) / len(correct))
-
+            '''
     def __val(self):
         """Validation function."""
         self.net.eval()
@@ -224,34 +215,9 @@ class modelTrainer(object):
             self.__test()
         return ret
 
-    def __test(self):
-        """Testing function."""
-        self.net.eval()
-
-        with torch.no_grad():
-            for i, data_tuple in enumerate(tqdm(self.test_loader, desc="Test", postfix=str(self.accuracy["test"].avg))):
-                """
-                input, gt
-                """
-                inputs = data_tuple[0].to(self.device)
-                gt = data_tuple[1].to(self.device)
-
-                output = self.net(inputs)
-                loss = self.loss(output, gt.squeeze(dim=1))
-
-                predicted = torch.argmax(output.detach(), dim=1)
-                correct = gt.detach().squeeze(dim=1)
-
-                self.iters += 1
-                self.update_metrics("test", loss.item(), inputs.size(0),
-                                    float((predicted == correct).sum()) / len(correct))
-        self.tbx_summary.add_scalar('test_loss', self.losses["test"].avg, self.epoch + 1)
-        self.tbx_summary.add_scalar('test_accuracy', self.accuracy["test"].avg, self.epoch + 1)
-        print("TEST accuracy: {:.4f}".format(self.accuracy["test"].avg))
-        self.losses["test"].reset()
-        self.accuracy["test"].reset()
-
     def train(self):
+        self.__train()
+        '''
         for n in range(self.configer.get("epochs")):
             print("Starting epoch {}".format(self.epoch + 1))
             self.__train()
@@ -261,7 +227,7 @@ class modelTrainer(object):
                       .format(self.configer.get("checkpoints", "early_stop"), n))
                 break
             self.epoch += 1
-
+        '''
     def update_metrics(self, split: str, loss, bs, accuracy=None):
         self.losses[split].update(loss, bs)
         if accuracy is not None:

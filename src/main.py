@@ -8,11 +8,11 @@ from torch.utils.data import Dataset, DataLoader
 import argparse
 
 from train import ResNet18Trainer
-from test import ResNet18Test
+#from test import ResNet18Test
 from utils.configer import Configer
 
 
-SEED = 1994
+SEED = 1991
 random.seed(SEED)
 np.random.seed(SEED)
 torch.manual_seed(SEED)
@@ -48,17 +48,6 @@ if __name__ == "__main__":
         model.init_model()
         model.train()
     elif configer.get('phase') == 'test':
-        model = ResNet18Test(configer)
+        #model = ResNet18Test(configer)
         model.init_model()
         model.test()
-
-
-train_dataset = TinyImageNetDataset(root, split='train', transform=train_transform)
-val_dataset = TinyImageNetDataset(root, split='val', transform=val_transform)
-
-train_loader = DataLoader(train_dataset, batch_size=8, shuffle=True, num_workers=2)
-val_loader = DataLoader(val_dataset, batch_size=8, shuffle=False, num_workers=2)
-
-print(f"Train size: {len(train_dataset)}")
-print(f"Val size: {len(val_dataset)}")
-print(f"Классов: {len(train_dataset.class_names)}")

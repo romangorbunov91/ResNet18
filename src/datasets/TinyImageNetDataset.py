@@ -10,7 +10,7 @@ class TinyImageNetDataset(Dataset):
         self,
         root: str,
         split: str = 'train', # 'train', 'val'
-        transform: transforms.Compose):
+        transform: Optional[transforms.Compose] = None):
 
         self.root = root
         self.split = split
@@ -28,7 +28,6 @@ class TinyImageNetDataset(Dataset):
         data_dir = os.path.join(self.root, split)
        
         if split == 'train':
-            
             for class_id in os.listdir(data_dir):
                 img_dir = os.path.join(data_dir, class_id, 'images')
                 for img_name in os.listdir(img_dir):
@@ -36,13 +35,21 @@ class TinyImageNetDataset(Dataset):
                     self.samples.append((img_path, self.class_to_idx[class_id]))
 
         elif split == 'val':
-
-            with open(os.path.join(data_dir, 'val_annotations.txt'), 'r') as f:
+            val_annotations_path = os.path.join(data_dir, 'val_annotations.txt')
+            if not os.path.exists(val_annotations_path):
+                raise FileNotFoundError(f"{val_annotations_path} not found.")
+            with open(val_annotations_path, 'r') as f:
                 for line in f:
-                    img_name, class_id, *_ = line.strip().split('\t')
+                    line_parts = line.strip().split('\t')
+                    # Skip malformed lines.
+                    if len(line_parts) < 2:
+                        continue  
+                    img_name, class_id = line_parts[0], line_parts[1]                    
+                    
+                    if class_id not in self.class_to_idx:
+                        raise ValueError(f"Unknown class_id '{class_id}' in {val_annotations_path}")
                     img_path = os.path.join(data_dir, 'images', img_name)
-                    if class_id in self.class_to_idx:
-                        self.samples.append((img_path, self.class_to_idx[class_id]))
+                    self.samples.append((img_path, self.class_to_idx[class_id]))
         
         else:
             raise ValueError("'split' must be 'train' or 'val'")
