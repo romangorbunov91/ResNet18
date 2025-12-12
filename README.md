@@ -32,3 +32,11 @@ https://disk.yandex.ru/d/adWo9fVCLuVQ0Q
 ```
 pip freeze > requirements.txt
 ```
+
+
+
+## Usage
+```
+python src/main.py --hypes src\hyperparameters\train.json
+```
+- `--hypes`, path to configuration file.
