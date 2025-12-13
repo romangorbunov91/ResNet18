@@ -7,6 +7,6 @@
 
 !/README.md
 !/requirements.txt
-!test_notebook.ipynb
+!debug_notebook.ipynb
 
 **/__pycache__/
