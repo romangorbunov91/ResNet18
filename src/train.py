@@ -6,8 +6,6 @@ from tqdm import tqdm
 from models.model_structure import ResNet18
 #from pathlib import Path
 
-
-
 #import torch.nn as nn
 
 from torch.utils.data import DataLoader
@@ -65,9 +63,9 @@ class ResNet18Trainer(object):
         self.dataset = self.configer.get("dataset").lower()         #: str: Type of dataset
         '''
         # Tensorboard and Metrics
-        self.tbx_summary = SummaryWriter(str(Path(configer.get('checkpoints', 'tb_path'))  #: Summary Writer plot
-                                             / configer.get("dataset")                     #: data with TensorboardX
-                                             / configer.get('checkpoints', 'save_name')))
+        self.tbx_summary = SummaryWriter(str(Path(self.configer.get('checkpoints', 'tb_path'))  #: Summary Writer plot
+                                             / self.configer.get("dataset")                     #: data with TensorboardX
+                                             / self.configer.get('checkpoints', 'save_name')))
         self.tbx_summary.add_text('parameters', str(self.configer).replace("\n", "\n\n"))
         self.save_iters = self.configer.get('checkpoints', 'save_iters')    #: int: Saving ratio
         '''

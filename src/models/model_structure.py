@@ -10,25 +10,53 @@ class BasicBlock(nn.Module):
     Args:
         in_channels (int): количество входных каналов.
         out_channels (int): количество выходных каналов.
-        stride (int): шаг свертки (по умолчанию 1).
-        downsample (nn.Module): слой для изменения размерности (если нужно).
+        kernel_size (int): размер ядра свертки (должен быть нечётным).
+        stride (int): шаг свертки.
     """
     expansion = 1  # не используется в ResNet18 (всегда 1), но для совместимости.
 
-    def __init__(self, in_channels: int, out_channels: int, stride: int = 1, downsample: Optional[nn.Module] = None):
+    def __init__(
+            self,
+            in_channels: int,
+            out_channels: int,
+            kernel_size: int,
+            stride: int
+        ):
+
         super().__init__()
-        # Основная ветвь
-        self.conv1 = nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=stride, padding=1, bias=False)
+
+        if kernel_size % 2 == 0:
+            raise ValueError("kernel_size must be odd to preserve spatial dimensions.")
+        
+        self.conv1 = nn.Conv2d(
+            in_channels,
+            out_channels,
+            kernel_size=kernel_size,
+            stride=stride,
+            padding=kernel_size // 2,
+            bias=False
+        )
         self.bn1 = nn.BatchNorm2d(out_channels)
         self.relu = nn.ReLU(inplace=True)
-        self.conv2 = nn.Conv2d(out_channels, out_channels, kernel_size=3, stride=1, padding=1, bias=False)
+        self.conv2 = nn.Conv2d(
+            out_channels,
+            out_channels,
+            kernel_size=kernel_size,
+            stride=1,
+            padding=kernel_size // 2,
+            bias=False
+        )
         self.bn2 = nn.BatchNorm2d(out_channels)
 
-        self.downsample = downsample
-        self.stride = stride
+        self.downsample = nn.Identity()
+        if (stride != 1) or (in_channels != out_channels):
+            self.downsample = nn.Sequential(
+                nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=stride, padding=0, bias=False),
+                nn.BatchNorm2d(out_channels)
+            )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        identity = x
+        identity = self.downsample(x)
 
         out = self.conv1(x)
         out = self.bn1(out)
@@ -37,12 +65,8 @@ class BasicBlock(nn.Module):
         out = self.conv2(out)
         out = self.bn2(out)
 
-        if self.downsample is not None:
-            identity = self.downsample(x)
-
         out += identity
         out = self.relu(out)
-
         return out
 
 class ResNet18(nn.Module):
