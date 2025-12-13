@@ -3,7 +3,7 @@ import torch.nn as nn
 import numpy as np
 import torchvision.transforms as transforms
 from tqdm import tqdm
-from models.model_structure import ResNet18
+from models.model_structure import customResNet18
 #from pathlib import Path
 
 #import torch.nn as nn
@@ -77,7 +77,7 @@ class ResNet18Trainer(object):
         self.loss = nn.CrossEntropyLoss().to(self.device)
 
         # Selecting correct model and normalization variable based on type variable.
-        self.net = ResNet18(num_classes=self.configer.get('data', 'n_classes'))
+        self.net = customResNet18(num_classes=self.configer.get('data', 'n_classes'))
 
         # Initializing training.
         self.iters = 0
@@ -157,7 +157,7 @@ class ResNet18Trainer(object):
             output = self.net(inputs)
 
             self.optimizer.zero_grad()
-            loss = self.loss(output, gt.squeeze(dim=1))
+            loss = self.loss(output, gt)
             loss.backward()
 
             torch.nn.utils.clip_grad_norm_(self.net.parameters(), max_norm=1)

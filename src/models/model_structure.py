@@ -13,7 +13,6 @@ class BasicBlock(nn.Module):
         kernel_size (int): размер ядра свертки (должен быть нечётным).
         stride (int): шаг свертки.
     """
-    expansion = 1  # не используется в ResNet18 (всегда 1), но для совместимости.
 
     def __init__(
             self,
@@ -69,25 +68,87 @@ class BasicBlock(nn.Module):
         out = self.relu(out)
         return out
 
-class ResNet18(nn.Module):
+class customResNet18(nn.Module):
+    expansion = 2
+    layer0_channels = 64
     def __init__(self, num_classes: int, zero_init_residual: bool = False):
         super().__init__()
 
-        # initial layers (before layers of blocks).
-        self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3, bias=False)
-        self.bn1 = nn.BatchNorm2d(64)
+        # Initial layers.
+        self.conv1 = nn.Conv2d(
+            in_channels=3,
+            out_channels=self.layer0_channels,
+            kernel_size=7,
+            stride=2,
+            padding=3,
+            bias=False
+        )
+        self.bn1 = nn.BatchNorm2d(self.layer0_channels)
         self.relu = nn.ReLU(inplace=True)
-        self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
+        #self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
 
-        # layer1: no downsampling (stride=1), 2 blocks.
-        self.layer1 = self._make_layer(64, 64, blocks=2, stride=1)
-        # layer2: downsampling (stride=2), 2 blocks.
-        self.layer2 = self._make_layer(64, 128, blocks=2, stride=2)
-        self.layer3 = self._make_layer(128, 256, blocks=2, stride=2)
-        self.layer4 = self._make_layer(256, 512, blocks=2, stride=2)
+        # Main layers.
+        order = 0
+        self.layer1_0 = BasicBlock(
+            in_channels = self.layer0_channels * self.expansion**order,
+            out_channels = self.layer0_channels * self.expansion**order,
+            kernel_size = 3,
+            stride = 1
+        )
+        self.layer1_1 = BasicBlock(
+            in_channels = self.layer0_channels * self.expansion**order,
+            out_channels = self.layer0_channels * self.expansion**order,
+            kernel_size = 3,
+            stride = 1
+        )
 
+        order += 1
+        self.layer2_0 = BasicBlock(
+            in_channels = self.layer0_channels * self.expansion**(order-1),
+            out_channels = self.layer0_channels * self.expansion**order,
+            kernel_size = 3,
+            stride = 2
+        )
+        self.layer2_1 = BasicBlock(
+            in_channels = self.layer0_channels * self.expansion,
+            out_channels = self.layer0_channels * self.expansion,
+            kernel_size = 3,
+            stride = 1
+        )
+
+        order += 1
+        self.layer3_0 = BasicBlock(
+            in_channels = self.layer0_channels * self.expansion**(order-1),
+            out_channels = self.layer0_channels * self.expansion**order,
+            kernel_size = 3,
+            stride = 2
+        )
+        self.layer3_1 = BasicBlock(
+            in_channels = self.layer0_channels * self.expansion**order,
+            out_channels = self.layer0_channels * self.expansion**order,
+            kernel_size = 3,
+            stride = 1
+        )
+        
+        # Отключаем 4-й слой, чтобы уместиться в 5 млн. параметров.
+        '''
+        order += 1
+        self.layer4_0 = BasicBlock(
+            in_channels = self.layer0_channels * self.expansion**(order-1),
+            out_channels = self.layer0_channels * self.expansion**order,
+            kernel_size = 3,
+            stride = 1
+        )
+        self.layer4_1 = BasicBlock(
+            in_channels = self.layer0_channels * self.expansion**order,
+            out_channels = self.layer0_channels * self.expansion**order,
+            kernel_size = 3,
+            stride = 1
+        )
+        '''
+        
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
-        self.fc = nn.Linear(512 * BasicBlock.expansion, num_classes)
+        self.fc = nn.Linear(self.layer0_channels * self.expansion**order, num_classes)
 
         # Init weights (optional, but recommended).
         for m in self.modules():
@@ -103,35 +164,36 @@ class ResNet18(nn.Module):
                 if isinstance(m, BasicBlock):
                     nn.init.constant_(m.bn2.weight, 0)
 
-    def _make_layer(self, in_channels: int, out_channels: int, blocks: int, stride: int) -> nn.Sequential:
-        downsample = None
-        if stride != 1 or in_channels != out_channels * BasicBlock.expansion:
-            downsample = nn.Sequential(
-                nn.Conv2d(in_channels, out_channels * BasicBlock.expansion,
-                          kernel_size=1, stride=stride, bias=False),
-                nn.BatchNorm2d(out_channels * BasicBlock.expansion)
-            )
-
-        layers = []
-        layers.append(BasicBlock(in_channels, out_channels, stride, downsample))
-        for _ in range(1, blocks):
-            layers.append(BasicBlock(out_channels, out_channels))
-
-        return nn.Sequential(*layers)
-
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        print('input:', x.shape)
         x = self.conv1(x)
+        print('input:', x.shape)
         x = self.bn1(x)
         x = self.relu(x)
-        x = self.maxpool(x)
+        #x = self.maxpool(x)
+        print('layer0:', x.shape)
+        
+        x = self.layer1_0(x)
+        x = self.layer1_1(x)
+        print('layer1:', x.shape)
+        
+        x = self.layer2_0(x)
+        x = self.layer2_1(x)
+        print('layer2:', x.shape)
 
-        x = self.layer1(x)
-        x = self.layer2(x)
-        x = self.layer3(x)
-        x = self.layer4(x)
+        x = self.layer3_0(x)
+        x = self.layer3_1(x)
+        print('layer3:', x.shape)
+
+        # Отключаем 4-й слой, чтобы уместиться в 5 млн. параметров.
+        '''
+        x = self.layer4_0(x)
+        x = self.layer4_1(x)
+        print('layer4:', x.shape)
+        '''
 
         x = self.avgpool(x)
-        x = torch.flatten(x, 1)
+        x = torch.flatten(x, 1) # безопасный аналог x.view(x.size(0), -1).
         x = self.fc(x)
-
+        print('output:', x.shape)
         return x

@@ -37,6 +37,6 @@ pip freeze > requirements.txt
 
 ## Usage
 ```
-python src/main.py --hypes src\hyperparameters\train.json
+python src/main.py --hypes src\hyperparameters\config.json
 ```
 - `--hypes`, path to configuration file.

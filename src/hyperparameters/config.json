@@ -4,14 +4,15 @@
     "epochs": 10,
     "phase": "train",
     "data": {
-      "n_classes": 200,
-      "data_path": "././datasets/tiny-imagenet-200"
+      "n_classes": 10,
+      "data_path": "././datasets/tiny-imagenet-200",
+      "batch_size": 1
     },
     "solver": {
       "type": "AdamW",
       "workers": 4,
       "weight_decay": 0.0001,
-      "base_lr": 0.0001,
+      "base_lr": 0.001,
       "decay_steps": [50, 75]
     }
 }
