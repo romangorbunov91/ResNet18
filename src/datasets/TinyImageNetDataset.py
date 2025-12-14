@@ -9,8 +9,10 @@ class TinyImageNetDataset(Dataset):
     def __init__(
         self,
         root: str,
-        split: str = 'train', # 'train', 'val'
-        transform: Optional[transforms.Compose] = None):
+        split: str = 'train',
+        transform: Optional[transforms.Compose] = None,
+        selected_classes: Optional[List[str]] = None
+        ):
 
         self.root = root
         self.split = split
@@ -21,10 +23,25 @@ class TinyImageNetDataset(Dataset):
         self.class_to_idx: dict = {}
         
         with open(os.path.join(self.root, 'wnids.txt'), 'r') as f:
-            self.class_names = [line.strip() for line in f.readlines()]
-        self.class_to_idx = {cls_name: i for i, cls_name in enumerate(self.class_names)}
+            all_class_names = [line.strip() for line in f.readlines()]
+            #self.class_names = [line.strip() for line in f.readlines()]
+        #self.class_to_idx = {cls_name: i for i, cls_name in enumerate(self.class_names)}
 
-        # load data.
+        # Select only specified classes, or all if None
+        if selected_classes is not None:
+            # Validate that all selected classes exist
+            invalid = set(selected_classes) - set(all_class_names)
+            if invalid:
+                raise ValueError(f"Selected classes not in dataset: {invalid}")
+            self.class_names = selected_classes
+        else:
+            self.class_names = all_class_names
+
+        # Create class_to_idx mapping for selected classes only
+        self.class_to_idx = {cls_name: i for i, cls_name in enumerate(self.class_names)}
+        self.idx_to_class = {i: cls_name for cls_name, i in self.class_to_idx.items()}
+
+        # Load data.
         data_dir = os.path.join(self.root, split)
        
         if split == 'train':

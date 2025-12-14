@@ -2,11 +2,12 @@ import torch
 import torch.nn as nn
 import numpy as np
 import torchvision.transforms as transforms
-from tqdm import tqdm
-from models.model_structure import customResNet18
-#from pathlib import Path
 
-#import torch.nn as nn
+# Import Utils.
+from tqdm import tqdm
+from utils.average_meter import AverageMeter
+
+#from pathlib import Path
 
 from torch.utils.data import DataLoader
 
@@ -14,9 +15,10 @@ from torch.utils.data import DataLoader
 from datasets.TinyImageNetDataset import TinyImageNetDataset
 
 # Import Model.
+from models.model_structure import customResNet18
 from models.model_utilizer import ModuleUtilizer
 
-# Setting seeds
+# Setting seeds.
 def worker_init_fn(worker_id):
     np.random.seed(torch.initial_seed() % 2 ** 32)
 
@@ -25,22 +27,20 @@ class ResNet18Trainer(object):
     def __init__(self, configer):
         self.configer = configer
 
-        self.data_path = configer.get("data", "data_path")      #: str: Path to data directory
-        '''
-        # Losses
+        self.data_path = self.configer.get("data", "data_path")      #: str: Path to data directory
+        
+        # Train and val losses.
         self.losses = {
-            'train': AverageMeter(),                      #: Train loss avg meter
-            'val': AverageMeter(),                        #: Val loss avg meter
-            'test': AverageMeter()                        #: Test loss avg meter
+            'train': AverageMeter(),                     #: Train loss avg meter
+            'val': AverageMeter()                        #: Val loss avg meter
         }
 
-        # Train val and test accuracy
+        # Train and val accuracy.
         self.accuracy = {
-            'train': AverageMeter(),                      #: Train accuracy avg meter
-            'val': AverageMeter(),                        #: Val accuracy avg meter
-            'test': AverageMeter()                        #: Test accuracy avg meter
+            'train': AverageMeter(),                     #: Train accuracy avg meter
+            'val': AverageMeter()                        #: Val accuracy avg meter
         }
-        '''
+        
         # DataLoaders
         self.train_loader = None
         self.val_loader = None
@@ -61,8 +61,9 @@ class ResNet18Trainer(object):
         self.loss = None
         
         self.dataset = self.configer.get("dataset").lower()         #: str: Type of dataset
+        
+        # Tensorboard and Metrics.
         '''
-        # Tensorboard and Metrics
         self.tbx_summary = SummaryWriter(str(Path(self.configer.get('checkpoints', 'tb_path'))  #: Summary Writer plot
                                              / self.configer.get("dataset")                     #: data with TensorboardX
                                              / self.configer.get('checkpoints', 'save_name')))
@@ -70,21 +71,21 @@ class ResNet18Trainer(object):
         self.save_iters = self.configer.get('checkpoints', 'save_iters')    #: int: Saving ratio
         '''
 
-
     def init_model(self):
         """Initialize model and other data for procedure"""
         
         self.loss = nn.CrossEntropyLoss().to(self.device)
-
+        self.selected_classes = self.configer.get('selected_classes')
+        self.n_classes = len(self.selected_classes )
         # Selecting correct model and normalization variable based on type variable.
-        self.net = customResNet18(num_classes=self.configer.get('data', 'n_classes'))
+        self.net = customResNet18(num_classes=self.n_classes)
 
         # Initializing training.
         self.iters = 0
         self.epoch = None
         phase = self.configer.get('phase')
 
-        # Starting or resuming procedure
+        # Starting or resuming procedure.
         if phase == 'train':
             self.net, self.iters, self.epoch, optim_dict = self.model_utility.load_net(self.net)
         else:
@@ -132,13 +133,13 @@ class ResNet18Trainer(object):
             Dataset(self.data_path, split="train", transform=self.train_transforms),
             batch_size=self.configer.get('data', 'batch_size'),
             shuffle=True,
-            num_workers=self.configer.get('solver', 'workers'))
+            num_workers=self.configer.get('data', 'workers'))
         
         self.val_loader = DataLoader(
             Dataset(self.data_path, split="val", transform=self.val_transforms),
             batch_size=self.configer.get('data', 'batch_size'),
             shuffle=False,
-            num_workers=self.configer.get('solver', 'workers'))
+            num_workers=self.configer.get('data', 'workers'))
 
     def __train(self):
         """Train function for every epoch."""
@@ -164,7 +165,7 @@ class ResNet18Trainer(object):
             self.optimizer.step()
 
             predicted = torch.argmax(output.detach(), dim=1)
-            correct = gt.detach().squeeze(dim=1)
+            correct = gt#.detach().squeeze(dim=1)
 
             self.iters += 1
             self.update_metrics("train", loss.item(), inputs.size(0),
@@ -179,8 +180,7 @@ class ResNet18Trainer(object):
                 """
                 input, gt
                 """
-                inputs = data_tuple[0].to(self.device)
-                gt = data_tuple[1].to(self.device)
+                inputs, gt = data_tuple[0].to(self.device), data_tuple[1].to(self.device)
 
                 output = self.net(inputs)
                 loss = self.loss(output, gt.squeeze(dim=1))
@@ -223,8 +223,10 @@ class ResNet18Trainer(object):
         self.losses[split].update(loss, bs)
         if accuracy is not None:
             self.accuracy[split].update(accuracy, bs)
+        '''
         if split == "train" and self.iters % self.save_iters == 0:
             self.tbx_summary.add_scalar('{}_loss'.format(split), self.losses[split].avg, self.iters)
             self.tbx_summary.add_scalar('{}_accuracy'.format(split), self.accuracy[split].avg, self.iters)
             self.losses[split].reset()
             self.accuracy[split].reset()
+        '''

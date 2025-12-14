@@ -2,15 +2,10 @@ import numpy as np
 import random
 import torch
 
-from datasets.TinyImageNetDataset import TinyImageNetDataset
-from torch.utils.data import Dataset, DataLoader
-
 import argparse
 
 from train import ResNet18Trainer
-#from test import ResNet18Test
 from utils.configer import Configer
-
 
 SEED = 1991
 random.seed(SEED)
@@ -47,7 +42,7 @@ if __name__ == "__main__":
         model = ResNet18Trainer(configer)
         model.init_model()
         model.train()
-    elif configer.get('phase') == 'test':
+    #elif configer.get('phase') == 'test':
         #model = ResNet18Test(configer)
-        model.init_model()
-        model.test()
+    #    model.init_model()
+     #   model.test()
