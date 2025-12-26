@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import torch
 import torch.nn as nn
 import numpy as np
@@ -7,16 +9,14 @@ import torchvision.transforms as transforms
 from tqdm import tqdm
 from utils.average_meter import AverageMeter
 
-#from pathlib import Path
-
 from torch.utils.data import DataLoader
 
 # Import Datasets.
 from datasets.TinyImageNetDataset import TinyImageNetDataset
 
 # Import Model.
-from models.model_structure import customResNet18
 from models.model_utilizer import ModuleUtilizer
+from models.model_structure import customResNet18
 
 # Setting seeds.
 def worker_init_fn(worker_id):
@@ -27,7 +27,7 @@ class ResNet18Trainer(object):
     def __init__(self, configer):
         self.configer = configer
 
-        self.data_path = self.configer.get("data", "data_path")      #: str: Path to data directory
+        self.data_path = Path(self.configer.get("data", "data_path")) / self.configer.get("dataset")
         
         # Train and val losses.
         self.losses = {
@@ -44,10 +44,9 @@ class ResNet18Trainer(object):
         # DataLoaders
         self.train_loader = None
         self.val_loader = None
-        self.test_loader = None
 
         # Module load and save utility
-        self.device = self.configer.get("device")
+        self.device = torch.device(self.configer.get("device") if torch.cuda.is_available() else 'cpu')
         self.model_utility = ModuleUtilizer(self.configer)      #: Model utility for load, save and update optimizer
         self.net = None
         self.lr = None
@@ -60,7 +59,12 @@ class ResNet18Trainer(object):
         self.val_transforms = None
         self.loss = None
         
-        self.dataset = self.configer.get("dataset").lower()         #: str: Type of dataset
+        #: str: Type of dataset.
+        self.dataset = self.configer.get("dataset").lower()
+        
+        #: int: Chosen classes to work with.
+        self.selected_classes = self.configer.get('selected_classes')
+        self.n_classes = len(self.selected_classes)
         
         # Tensorboard and Metrics.
         '''
@@ -68,15 +72,12 @@ class ResNet18Trainer(object):
                                              / self.configer.get("dataset")                     #: data with TensorboardX
                                              / self.configer.get('checkpoints', 'save_name')))
         self.tbx_summary.add_text('parameters', str(self.configer).replace("\n", "\n\n"))
-        self.save_iters = self.configer.get('checkpoints', 'save_iters')    #: int: Saving ratio
         '''
 
     def init_model(self):
         """Initialize model and other data for procedure"""
         
         self.loss = nn.CrossEntropyLoss().to(self.device)
-        self.selected_classes = self.configer.get('selected_classes')
-        self.n_classes = len(self.selected_classes )
         # Selecting correct model and normalization variable based on type variable.
         self.net = customResNet18(num_classes=self.n_classes)
 
@@ -94,17 +95,15 @@ class ResNet18Trainer(object):
         if self.epoch is None:
             self.epoch = 0
 
-        # ToDo Restore optimizer and scheduler from checkpoint
         self.optimizer, self.lr = self.model_utility.update_optimizer(self.net, self.iters)
-        #self.scheduler = MultiStepLR(self.optimizer, self.configer["solver", "decay_steps"], gamma=0.1)
 
-        #  Resuming training, restoring optimizer value
+        #  Resuming training, restoring optimizer value.
         if optim_dict is not None:
             print("Resuming training from epoch {}.".format(self.epoch))
             self.optimizer.load_state_dict(optim_dict)
         
         # Selecting Dataset and DataLoader
-        if self.dataset == "tinyimagenetdataset":
+        if self.dataset == "tiny-imagenet-200":
             Dataset = TinyImageNetDataset
             
             normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
@@ -150,22 +149,20 @@ class ResNet18Trainer(object):
         
         self.net.train()
         for data_tuple in tqdm(self.train_loader, desc="Train"):
-            """
-            input, gt
-            """
+
             inputs, gt = data_tuple[0].to(self.device), data_tuple[1].to(self.device)
 
             output = self.net(inputs)
 
             self.optimizer.zero_grad()
-            loss = self.loss(output, gt)
+            loss = self.loss(output, gt.squeeze(dim=1))
             loss.backward()
 
             torch.nn.utils.clip_grad_norm_(self.net.parameters(), max_norm=1)
             self.optimizer.step()
 
             predicted = torch.argmax(output.detach(), dim=1)
-            correct = gt#.detach().squeeze(dim=1)
+            correct = gt.detach().squeeze(dim=1)
 
             self.iters += 1
             self.update_metrics("train", loss.item(), inputs.size(0),
@@ -177,9 +174,7 @@ class ResNet18Trainer(object):
 
         with torch.no_grad():
             for data_tuple in tqdm(self.val_loader, desc="Val", postfix=""+str(np.random.randint(200))):
-                """
-                input, gt
-                """
+
                 inputs, gt = data_tuple[0].to(self.device), data_tuple[1].to(self.device)
 
                 output = self.net(inputs)
@@ -206,9 +201,7 @@ class ResNet18Trainer(object):
             self.__test()
         return ret
 
-    def train(self):
-        self.__train()
-        
+    def train(self):        
         for n in range(self.configer.get("epochs")):
             print("Starting epoch {}".format(self.epoch + 1))
             self.__train()

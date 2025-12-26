@@ -30,15 +30,11 @@ if __name__ == "__main__":
                         dest='resume', help='The path of pretrained model.')
     
     args = parser.parse_args()
-    args.device = None
-    if not args.disable_cuda and torch.cuda.is_available():
-        args.device = torch.device('cuda')
-    else:
-        args.device = torch.device('cpu')
 
     torch.autograd.set_detect_anomaly(True)
     configer = Configer(args)
-    if configer.get('phase') == 'train':
+    phase = args.phase if args.phase is not None else configer.params.get('phase')
+    if phase == 'train':
         model = ResNet18Trainer(configer)
         model.init_model()
         model.train()
