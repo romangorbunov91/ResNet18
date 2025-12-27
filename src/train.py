@@ -31,14 +31,14 @@ class ResNet18Trainer(object):
         
         # Train and val losses.
         self.losses = {
-            'train': AverageMeter(),                     #: Train loss avg meter
-            'val': AverageMeter()                        #: Val loss avg meter
+            'train': AverageMeter(),
+            'val': AverageMeter()
         }
 
         # Train and val accuracy.
         self.accuracy = {
-            'train': AverageMeter(),                     #: Train accuracy avg meter
-            'val': AverageMeter()                        #: Val accuracy avg meter
+            'train': AverageMeter(),
+            'val': AverageMeter()
         }
         
         # DataLoaders
@@ -65,20 +65,12 @@ class ResNet18Trainer(object):
         #: int: Chosen classes to work with.
         self.selected_classes = self.configer.get('selected_classes')
         self.n_classes = len(self.selected_classes)
-        
-        # Tensorboard and Metrics.
-        '''
-        self.tbx_summary = SummaryWriter(str(Path(self.configer.get('checkpoints', 'tb_path'))  #: Summary Writer plot
-                                             / self.configer.get("dataset")                     #: data with TensorboardX
-                                             / self.configer.get('checkpoints', 'save_name')))
-        self.tbx_summary.add_text('parameters', str(self.configer).replace("\n", "\n\n"))
-        '''
+
 
     def init_model(self):
         """Initialize model and other data for procedure"""
         
         self.loss = nn.CrossEntropyLoss().to(self.device)
-        # Selecting correct model and normalization variable based on type variable.
         self.net = customResNet18(num_classes=self.n_classes)
 
         # Initializing training.
@@ -150,13 +142,12 @@ class ResNet18Trainer(object):
             shuffle=False,
             num_workers=self.configer.get('data', 'workers'))
 
-    def __train(self):
-        """Train function for every epoch."""
-        
         print(f"Train size: {len(self.train_loader.dataset)}")
         print(f"Val size: {len(self.val_loader.dataset)}")
-        print(f"Классов: {len(self.train_loader.dataset.class_names)}")       
-        
+        print(f"Классов: {len(self.train_loader.dataset.class_names)}")
+              
+    def __train(self):
+        """Train function for every epoch."""
         self.net.train()
         for data_tuple in tqdm(self.train_loader, desc="Train"):
 
@@ -188,17 +179,15 @@ class ResNet18Trainer(object):
                 inputs, gt = data_tuple[0].to(self.device), data_tuple[1].to(self.device)
 
                 output = self.net(inputs)
-                loss = self.loss(output, gt)#.squeeze(dim=1))
+                loss = self.loss(output, gt)
 
                 predicted = torch.argmax(output.detach(), dim=1)
-                correct = gt.detach()#.squeeze(dim=1)
+                correct = gt.detach()
 
                 self.iters += 1
                 self.update_metrics("val", loss.item(), inputs.size(0),
                                     float((predicted == correct).sum()) / len(correct))
 
-        self.tbx_summary.add_scalar('val_loss', self.losses["val"].avg, self.epoch + 1)
-        self.tbx_summary.add_scalar('val_accuracy', self.accuracy["val"].avg, self.epoch + 1)
         print("VAL  accuracy: {:.4f}".format(self.accuracy["val"].avg))
         accuracy = self.accuracy["val"].avg
         self.accuracy["val"].reset()
@@ -207,8 +196,8 @@ class ResNet18Trainer(object):
         ret = self.model_utility.save(accuracy, self.net, self.optimizer, self.iters, self.epoch + 1)
         if ret < 0:
             return -1
-        elif ret > 0 and self.test_loader is not None:
-            self.__test()
+        #elif ret > 0 and self.test_loader is not None:
+        #    self.__test()
         return ret
 
     def train(self):        
@@ -226,10 +215,3 @@ class ResNet18Trainer(object):
         self.losses[split].update(loss, bs)
         if accuracy is not None:
             self.accuracy[split].update(accuracy, bs)
-        '''
-        if split == "train" and self.iters % self.save_iters == 0:
-            self.tbx_summary.add_scalar('{}_loss'.format(split), self.losses[split].avg, self.iters)
-            self.tbx_summary.add_scalar('{}_accuracy'.format(split), self.accuracy[split].avg, self.iters)
-            self.losses[split].reset()
-            self.accuracy[split].reset()
-        '''
