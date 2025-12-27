@@ -165,14 +165,14 @@ class ResNet18Trainer(object):
             output = self.net(inputs)
 
             self.optimizer.zero_grad()
-            loss = self.loss(output, gt.squeeze(dim=1))
+            loss = self.loss(output, gt)
             loss.backward()
 
             torch.nn.utils.clip_grad_norm_(self.net.parameters(), max_norm=1)
             self.optimizer.step()
 
             predicted = torch.argmax(output.detach(), dim=1)
-            correct = gt.detach().squeeze(dim=1)
+            correct = gt.detach()
 
             self.iters += 1
             self.update_metrics("train", loss.item(), inputs.size(0),
@@ -188,10 +188,10 @@ class ResNet18Trainer(object):
                 inputs, gt = data_tuple[0].to(self.device), data_tuple[1].to(self.device)
 
                 output = self.net(inputs)
-                loss = self.loss(output, gt.squeeze(dim=1))
+                loss = self.loss(output, gt)#.squeeze(dim=1))
 
                 predicted = torch.argmax(output.detach(), dim=1)
-                correct = gt.detach().squeeze(dim=1)
+                correct = gt.detach()#.squeeze(dim=1)
 
                 self.iters += 1
                 self.update_metrics("val", loss.item(), inputs.size(0),
