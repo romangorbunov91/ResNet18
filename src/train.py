@@ -97,7 +97,7 @@ class ResNet18Trainer(object):
 
         self.optimizer, self.lr = self.model_utility.update_optimizer(self.net, self.iters)
 
-        #  Resuming training, restoring optimizer value.
+        # Resuming training, restoring optimizer value.
         if optim_dict is not None:
             print("Resuming training from epoch {}.".format(self.epoch))
             self.optimizer.load_state_dict(optim_dict)
@@ -129,13 +129,23 @@ class ResNet18Trainer(object):
 
         # Setting Dataloaders.
         self.train_loader = DataLoader(
-            Dataset(self.data_path, split="train", transform=self.train_transforms),
+            Dataset(
+                self.data_path,
+                split="train",
+                transform=self.train_transforms,
+                selected_classes=self.selected_classes
+                ),
             batch_size=self.configer.get('data', 'batch_size'),
             shuffle=True,
             num_workers=self.configer.get('data', 'workers'))
         
         self.val_loader = DataLoader(
-            Dataset(self.data_path, split="val", transform=self.val_transforms),
+            Dataset(
+                self.data_path,
+                split="val",
+                transform=self.val_transforms,
+                selected_classes=self.selected_classes
+                ),
             batch_size=self.configer.get('data', 'batch_size'),
             shuffle=False,
             num_workers=self.configer.get('data', 'workers'))
