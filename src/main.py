@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import random
 import torch
 
@@ -33,12 +34,14 @@ if __name__ == "__main__":
 
     torch.autograd.set_detect_anomaly(True)
     configer = Configer(args)
-    phase = args.phase if args.phase is not None else configer.params.get('phase')
-    if phase == 'train':
-        model = ResNet18Trainer(configer)
-        model.init_model()
-        model.train()
-    #elif configer.get('phase') == 'test':
-        #model = ResNet18Test(configer)
-    #    model.init_model()
-     #   model.test()
+    model = ResNet18Trainer(configer)
+    model.init_model()
+    history = model.train()
+    
+    
+    
+    df = pd.DataFrame(history)
+    print(df.round(4))
+
+    # Save to CSV
+    df.to_csv("training_log.csv", index=False)

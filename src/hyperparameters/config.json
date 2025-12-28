@@ -2,8 +2,7 @@
   "name": "customResNet18",
   "dataset": "tiny-imagenet-200",
   "device": "cuda",
-  "epochs": 10,
-  "phase": "train",
+  "epochs": 30,
   "data": {
     "data_path": "./datasets/",
     "workers": 4,

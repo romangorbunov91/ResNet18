@@ -8,7 +8,6 @@ import torchvision.transforms as transforms
 # Import Utils.
 from tqdm import tqdm
 from utils.average_meter import AverageMeter
-
 from torch.utils.data import DataLoader
 
 # Import Datasets.
@@ -65,8 +64,16 @@ class ResNet18Trainer(object):
         #: int: Chosen classes to work with.
         self.selected_classes = self.configer.get('selected_classes')
         self.n_classes = len(self.selected_classes)
-
-
+        
+        self.history = {
+            "epoch": [],
+            "train_loss": [],
+            "train_accuracy": [],
+            "val_loss": [],
+            "val_accuracy": [],
+            "lr": []
+        }
+        
     def init_model(self):
         """Initialize model and other data for procedure"""
         
@@ -76,16 +83,14 @@ class ResNet18Trainer(object):
         # Initializing training.
         self.iters = 0
         self.epoch = None
-        phase = self.configer.get('phase')
 
         # Starting or resuming procedure.
-        if phase == 'train':
-            self.net, self.iters, self.epoch, optim_dict = self.model_utility.load_net(self.net)
-        else:
-            raise ValueError('Phase: {} is not valid.'.format(phase))
-
+        self.net, self.iters, self.epoch_init, optim_dict = self.model_utility.load_net(self.net)
+        
         if self.epoch is None:
             self.epoch = 0
+        else:
+            self.epoch = self.epoch_init
 
         self.optimizer, self.lr = self.model_utility.update_optimizer(self.net, self.iters)
 
@@ -192,9 +197,7 @@ class ResNet18Trainer(object):
 
         print("VAL  accuracy: {:.4f}".format(self.accuracy["val"].avg))
         accuracy = self.accuracy["val"].avg
-        self.accuracy["val"].reset()
-        self.losses["val"].reset()
-
+        
         ret = self.model_utility.save(accuracy, self.net, self.optimizer, self.iters, self.epoch + 1)
         if ret < 0:
             return -1
@@ -202,15 +205,29 @@ class ResNet18Trainer(object):
 
     def train(self):        
         for n in range(self.configer.get("epochs")):
-            print("Starting epoch {}".format(self.epoch + 1))
+            print("Starting epoch {} of {}.".format(self.epoch + 1, self.configer.get("epochs") + self.epoch_init))
             self.__train()
             ret = self.__val()
+            
+            self.history["epoch"].append(self.epoch + 1)
+            self.history["train_loss"].append(self.losses["train"].avg)
+            self.history["train_accuracy"].append(self.accuracy["train"].avg)
+            self.history["val_loss"].append(self.losses["val"].avg)
+            self.history["val_accuracy"].append(self.accuracy["val"].avg)
+            self.history["lr"].append(self.optimizer.param_groups[0]["lr"])
+            
+            self.accuracy["train"].reset()
+            self.losses["train"].reset()
+            self.accuracy["val"].reset()
+            self.losses["val"].reset()
+            
             if ret < 0:
                 print("Got no improvement for {} subsequent epochs. Stopped training at epoch {}."
                       .format(self.configer.get("checkpoints", "early_stop_number"), self.epoch + n))
                 break
             self.epoch += 1
-        
+        return self.history
+    
     def update_metrics(self, split: str, loss, bs, accuracy):
         self.losses[split].update(loss, bs)
         self.accuracy[split].update(accuracy, bs)
