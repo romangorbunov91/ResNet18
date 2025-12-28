@@ -40,3 +40,5 @@ pip freeze > requirements.txt
 python src/main.py --hypes src\hyperparameters\config.json
 ```
 - `--hypes`, path to configuration file.
+
+`save_policy`: "all", "best", "early_stop"

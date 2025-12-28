@@ -22,14 +22,15 @@
     "n04254777"
   ],
   "solver": {
-    "type": "AdamW",
+    "type": "Adam",
     "weight_decay": 0.0001,
     "base_lr": 0.001,
     "decay_steps": [50, 75]
   },
   "checkpoints": {
-    "save_policy": "best",
+    "save_policy": "early_stop",
     "save_name": "train",
-    "save_dir": "./checkpoints/"
+    "save_dir": "./checkpoints/",
+    "early_stop_number": 5
   }
 }

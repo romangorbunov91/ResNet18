@@ -47,7 +47,7 @@ class ResNet18Trainer(object):
 
         # Module load and save utility
         self.device = torch.device(self.configer.get("device") if torch.cuda.is_available() else 'cpu')
-        self.model_utility = ModuleUtilizer(self.configer)      #: Model utility for load, save and update optimizer
+        self.model_utility = ModuleUtilizer(self.configer) #: Model utility for load, save and update optimizer
         self.net = None
         self.lr = None
 
@@ -93,6 +93,8 @@ class ResNet18Trainer(object):
         if optim_dict is not None:
             print("Resuming training from epoch {}.".format(self.epoch))
             self.optimizer.load_state_dict(optim_dict)
+        else:
+            print("Starting training from scratch.")
         
         # Selecting Dataset and DataLoader
         if self.dataset == "tiny-imagenet-200":
@@ -144,7 +146,7 @@ class ResNet18Trainer(object):
 
         print(f"Train size: {len(self.train_loader.dataset)}")
         print(f"Val size: {len(self.val_loader.dataset)}")
-        print(f"Классов: {len(self.train_loader.dataset.class_names)}")
+        print(f"Number of classes: {len(self.train_loader.dataset.class_names)}")
               
     def __train(self):
         """Train function for every epoch."""
@@ -196,8 +198,6 @@ class ResNet18Trainer(object):
         ret = self.model_utility.save(accuracy, self.net, self.optimizer, self.iters, self.epoch + 1)
         if ret < 0:
             return -1
-        #elif ret > 0 and self.test_loader is not None:
-        #    self.__test()
         return ret
 
     def train(self):        
@@ -206,12 +206,11 @@ class ResNet18Trainer(object):
             self.__train()
             ret = self.__val()
             if ret < 0:
-                print("Got no improvement for {} epochs, current epoch is {}."
-                      .format(self.configer.get("checkpoints", "early_stop"), n))
+                print("Got no improvement for {} subsequent epochs. Stopped training at epoch {}."
+                      .format(self.configer.get("checkpoints", "early_stop_number"), self.epoch + n))
                 break
             self.epoch += 1
         
-    def update_metrics(self, split: str, loss, bs, accuracy=None):
+    def update_metrics(self, split: str, loss, bs, accuracy):
         self.losses[split].update(loss, bs)
-        if accuracy is not None:
-            self.accuracy[split].update(accuracy, bs)
+        self.accuracy[split].update(accuracy, bs)
