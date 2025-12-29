@@ -41,4 +41,5 @@ python src/main.py --hypes src\hyperparameters\config.json
 ```
 - `--hypes`, path to configuration file.
 
-`save_policy`: "all", "best", "early_stop"
+`save_policy`: "all", "best"
+"early_stop" if "early_stop_number" <= 0

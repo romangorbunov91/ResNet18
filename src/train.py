@@ -189,7 +189,7 @@ class ResNet18Trainer(object):
             self.net,
             self.optimizer,
             self.epoch + 1)
-        
+
         if ret < 0:
             return -1
         return ret
@@ -210,7 +210,12 @@ class ResNet18Trainer(object):
             prefix = f"Epoch {self.train_history['epoch'][-1]:2d} | "
             print(f"{prefix}Train Loss: {self.train_history['train_loss'][-1]:.4f}, Accuracy: {self.train_history['train_accuracy'][-1]:.4f}")
             print(f"{' ' * len(prefix)}Val   Loss: {self.train_history['val_loss'][-1]:.4f}, Accuracy: {self.train_history['val_accuracy'][-1]:.4f}")
-                        
+            
+            self.losses["train"].reset()
+            self.accuracy["train"].reset()
+            self.losses["val"].reset()
+            self.accuracy["val"].reset()
+
             if ret < 0:
                 print("Got no improvement for {} subsequent epochs. Finished epoch {}, than stopped."
                       .format(self.configer.get("checkpoints", "early_stop_number"), self.epoch_init + n+1))
@@ -220,7 +225,5 @@ class ResNet18Trainer(object):
         return self.train_history
     
     def update_metrics(self, split: str, loss, bs, accuracy):
-        self.losses[split].reset()
-        self.accuracy[split].reset()
         self.losses[split].update(loss, bs)
         self.accuracy[split].update(accuracy, bs)
