@@ -36,12 +36,11 @@ if __name__ == "__main__":
     configer = Configer(args)
     model = ResNet18Trainer(configer)
     model.init_model()
-    history = model.train()
+    train_history = model.train()
     
     
-    
-    df = pd.DataFrame(history)
+    df = pd.DataFrame(train_history)
     print(df.round(4))
 
     # Save to CSV
-    df.to_csv("training_log.csv", index=False)
+    df.to_csv("train_log.csv", index=False)

@@ -15,21 +15,22 @@ class ModuleUtilizer(object):
         """Class constructor for Module utility"""
         self.configer = configer
         self.device = torch.device(self.configer.get("device") if torch.cuda.is_available() else 'cpu')
-
+        print(f"Device (model_utilizer.py): {self.device}")
         self.save_policy = self.configer.get("checkpoints", "save_policy")
-        if self.save_policy in ["early_stop", "earlystop"]:
-            self.save = self.early_stop
-        elif self.save_policy == "all":
+        if self.save_policy == "all":
             self.save = self.save_all
         elif self.save_policy == "best":
-            self.save = self.save_best
+            if self.configer.get("checkpoints", "early_stop_number") > 0:
+                self.save = self.early_stop
+            else:
+                self.save = self.save_best
         else:
             raise ValueError(f'Policy "{self.save_policy}" is unknown.')
 
         self.best_accuracy = 0
         self.last_improvement = 0
 
-    def update_optimizer(self, net, iters):
+    def update_optimizer(self, net):
         """Load optimizer and adjust learning rate during training.
 
             Args:
@@ -75,19 +76,18 @@ class ModuleUtilizer(object):
         """Loading net method. If resume is True load from provided checkpoint, if False load new DataParallel
 
             Args:
-                net (torch.nn.Module): Module in use
+                net (torch.nn.Module): Module in use.
 
             Returns:
-                net (torch.nn.DataParallel): Loaded Network module
-                iters (int): Loaded current iteration number, 0 if Resume is False
-                epoch (int): Loaded current epoch number, 0 if Resume is False
-                optimizer (torch.nn.optimizer): Loaded optimizer state, None if Resume is False
+                net (torch.nn.DataParallel): Loaded Network module.
+                epoch (int): Loaded current epoch number, 0 if Resume is False.
+                optimizer (torch.nn.optimizer): Loaded optimizer state, None if Resume is False.
         """
         
-        iters = 0
-        epoch = 0
-        optimizer = None
-        if self.configer.get('resume') is not None:
+        if self.configer.get('resume') is None:
+            epoch = 0
+            optim_dict = None
+        else:
             print('Restoring checkpoint: ', self.configer.get('resume'))
             checkpoint_dict = torch.load(self.configer.get('resume'))
             # Remove "module." from DataParallel, if present.
@@ -99,15 +99,14 @@ class ModuleUtilizer(object):
                 print(f"State dict loading issues:\n{e}")
 
             epoch = checkpoint_dict.get('epoch', 0)
-            iters = checkpoint_dict.get('iter', 0)
-            optimizer = checkpoint_dict.get('optimizer', None)
+            optim_dict = checkpoint_dict.get('optimizer', None)
             
         net = net.to(self.device)
         if self.device.type == 'cuda' and torch.cuda.device_count() > 1:
             net = nn.DataParallel(net)
-        return net, iters, epoch, optimizer
+        return net, epoch, optim_dict
 
-    def _save_net(self, net, optimizer, iters, epoch):
+    def _save_net(self, net, optimizer, epoch):
         """Saving net state method.
 
             Args:
@@ -118,7 +117,6 @@ class ModuleUtilizer(object):
         """
         
         state = {
-            'iter': iters,
             'epoch': epoch,
             'state_dict': net.state_dict(),
             'optimizer': optimizer.state_dict()
@@ -129,27 +127,27 @@ class ModuleUtilizer(object):
             os.makedirs(checkpoints_dir)
         if self.save_policy == "all":
             latest_name = '{}_{}.pth'.format(self.configer.get('checkpoints', 'save_name'), epoch)
-        elif self.save_policy in ["best", "early_stop", "earlystop"]:
+        elif self.save_policy == "best":
             latest_name = 'best_{}.pth'.format(self.configer.get('checkpoints', 'save_name'))
         else:
             raise ValueError(f'Policy {self.save_policy} is unknown.')
    
         torch.save(state, checkpoints_dir / latest_name)
 
-    def save_all(self, accuracy, net, optimizer, iters, epoch):
-        self._save_net(net, optimizer, iters, epoch)
+    def save_all(self, accuracy, net, optimizer, epoch):
+        self._save_net(net, optimizer, epoch)
         return accuracy
 
-    def save_best(self, accuracy, net, optimizer, iters, epoch):
+    def save_best(self, accuracy, net, optimizer, epoch):
         if accuracy > self.best_accuracy:
             self.best_accuracy = accuracy
-            self._save_net(net, optimizer, iters, epoch)
+            self._save_net(net, optimizer, epoch)
             return self.best_accuracy
         else:
             return 0
 
-    def early_stop(self, accuracy, net, optimizer, iters, epoch):
-        ret = self.save_best(accuracy, net, optimizer, iters, epoch)
+    def early_stop(self, accuracy, net, optimizer, epoch):
+        ret = self.save_best(accuracy, net, optimizer, epoch)
         if ret > 0:
             self.last_improvement = 0
         else:

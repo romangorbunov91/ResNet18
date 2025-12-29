@@ -26,7 +26,31 @@ class ResNet18Trainer(object):
     def __init__(self, configer):
         self.configer = configer
 
+        #: str: Type of dataset.
+        self.dataset = self.configer.get("dataset").lower()
         self.data_path = Path(self.configer.get("data", "data_path")) / self.configer.get("dataset")
+        
+        # DataLoaders.
+        self.train_loader = None
+        self.val_loader = None
+
+        # Module load and save utility.
+        self.device = torch.device(self.configer.get("device") if torch.cuda.is_available() else 'cpu')
+        print(f"Device (train.py): {self.device}")
+        self.model_utility = ModuleUtilizer(self.configer) #: Model utility for load, save and update optimizer
+        self.net = None
+        self.lr = None
+
+        # Training procedure.
+        self.epoch = None
+        self.optimizer = None
+        self.loss = None
+        self.train_transforms = None
+        self.val_transforms = None
+        
+        #: int: Chosen classes to work with.
+        self.selected_classes = self.configer.get('selected_classes')
+        self.n_classes = len(self.selected_classes)
         
         # Train and val losses.
         self.losses = {
@@ -40,32 +64,7 @@ class ResNet18Trainer(object):
             'val': AverageMeter()
         }
         
-        # DataLoaders
-        self.train_loader = None
-        self.val_loader = None
-
-        # Module load and save utility
-        self.device = torch.device(self.configer.get("device") if torch.cuda.is_available() else 'cpu')
-        self.model_utility = ModuleUtilizer(self.configer) #: Model utility for load, save and update optimizer
-        self.net = None
-        self.lr = None
-
-        # Training procedure
-        self.optimizer = None
-        self.iters = None
-        self.epoch = 0
-        self.train_transforms = None
-        self.val_transforms = None
-        self.loss = None
-        
-        #: str: Type of dataset.
-        self.dataset = self.configer.get("dataset").lower()
-        
-        #: int: Chosen classes to work with.
-        self.selected_classes = self.configer.get('selected_classes')
-        self.n_classes = len(self.selected_classes)
-        
-        self.history = {
+        self.train_history = {
             "epoch": [],
             "train_loss": [],
             "train_accuracy": [],
@@ -81,25 +80,16 @@ class ResNet18Trainer(object):
         self.net = customResNet18(num_classes=self.n_classes)
 
         # Initializing training.
-        self.iters = 0
-        self.epoch = None
-
-        # Starting or resuming procedure.
-        self.net, self.iters, self.epoch_init, optim_dict = self.model_utility.load_net(self.net)
-        
-        if self.epoch is None:
-            self.epoch = 0
-        else:
-            self.epoch = self.epoch_init
-
-        self.optimizer, self.lr = self.model_utility.update_optimizer(self.net, self.iters)
+        self.net, self.epoch_init, optim_dict = self.model_utility.load_net(self.net)
+        self.epoch = self.epoch_init
+        self.optimizer, self.lr = self.model_utility.update_optimizer(self.net)
 
         # Resuming training, restoring optimizer value.
-        if optim_dict is not None:
+        if optim_dict is None:
+            print("Starting training from scratch.")
+        else:
             print("Resuming training from epoch {}.".format(self.epoch))
             self.optimizer.load_state_dict(optim_dict)
-        else:
-            print("Starting training from scratch.")
         
         # Selecting Dataset and DataLoader
         if self.dataset == "tiny-imagenet-200":
@@ -172,7 +162,6 @@ class ResNet18Trainer(object):
             predicted = torch.argmax(output.detach(), dim=1)
             correct = gt.detach()
 
-            self.iters += 1
             self.update_metrics("train", loss.item(), inputs.size(0),
                                 float((predicted==correct).sum()) / len(correct))
 
@@ -181,24 +170,26 @@ class ResNet18Trainer(object):
         self.net.eval()
 
         with torch.no_grad():
-            for data_tuple in tqdm(self.val_loader, desc="Val", postfix=""+str(np.random.randint(200))):
+            for data_tuple in tqdm(self.val_loader, desc="Val"):
 
                 inputs, gt = data_tuple[0].to(self.device), data_tuple[1].to(self.device)
 
                 output = self.net(inputs)
+                
                 loss = self.loss(output, gt)
 
                 predicted = torch.argmax(output.detach(), dim=1)
                 correct = gt.detach()
 
-                self.iters += 1
                 self.update_metrics("val", loss.item(), inputs.size(0),
                                     float((predicted == correct).sum()) / len(correct))
-
-        print("VAL  accuracy: {:.4f}".format(self.accuracy["val"].avg))
-        accuracy = self.accuracy["val"].avg
         
-        ret = self.model_utility.save(accuracy, self.net, self.optimizer, self.iters, self.epoch + 1)
+        ret = self.model_utility.save(
+            self.accuracy["val"].avg,
+            self.net,
+            self.optimizer,
+            self.epoch + 1)
+        
         if ret < 0:
             return -1
         return ret
@@ -209,25 +200,27 @@ class ResNet18Trainer(object):
             self.__train()
             ret = self.__val()
             
-            self.history["epoch"].append(self.epoch + 1)
-            self.history["train_loss"].append(self.losses["train"].avg)
-            self.history["train_accuracy"].append(self.accuracy["train"].avg)
-            self.history["val_loss"].append(self.losses["val"].avg)
-            self.history["val_accuracy"].append(self.accuracy["val"].avg)
-            self.history["lr"].append(self.optimizer.param_groups[0]["lr"])
+            self.train_history["epoch"].append(self.epoch + 1)
+            self.train_history["train_loss"].append(self.losses["train"].avg)
+            self.train_history["train_accuracy"].append(self.accuracy["train"].avg)
+            self.train_history["val_loss"].append(self.losses["val"].avg)
+            self.train_history["val_accuracy"].append(self.accuracy["val"].avg)
+            self.train_history["lr"].append(self.optimizer.param_groups[0]["lr"])
             
-            self.accuracy["train"].reset()
-            self.losses["train"].reset()
-            self.accuracy["val"].reset()
-            self.losses["val"].reset()
-            
+            prefix = f"Epoch {self.train_history['epoch'][-1]:2d} | "
+            print(f"{prefix}Train Loss: {self.train_history['train_loss'][-1]:.4f}, Accuracy: {self.train_history['train_accuracy'][-1]:.4f}")
+            print(f"{' ' * len(prefix)}Val   Loss: {self.train_history['val_loss'][-1]:.4f}, Accuracy: {self.train_history['val_accuracy'][-1]:.4f}")
+                        
             if ret < 0:
-                print("Got no improvement for {} subsequent epochs. Stopped training at epoch {}."
-                      .format(self.configer.get("checkpoints", "early_stop_number"), self.epoch + n))
+                print("Got no improvement for {} subsequent epochs. Finished epoch {}, than stopped."
+                      .format(self.configer.get("checkpoints", "early_stop_number"), self.epoch_init + n+1))
                 break
+            
             self.epoch += 1
-        return self.history
+        return self.train_history
     
     def update_metrics(self, split: str, loss, bs, accuracy):
+        self.losses[split].reset()
+        self.accuracy[split].reset()
         self.losses[split].update(loss, bs)
         self.accuracy[split].update(accuracy, bs)

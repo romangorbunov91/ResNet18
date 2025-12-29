@@ -6,7 +6,7 @@
   "data": {
     "data_path": "./datasets/",
     "workers": 4,
-    "batch_size": 128
+    "batch_size": 500
   },
   "selected_classes": [
     "n01910747",
@@ -27,7 +27,7 @@
     "decay_steps": [50, 75]
   },
   "checkpoints": {
-    "save_policy": "early_stop",
+    "save_policy": "best",
     "save_name": "train",
     "save_dir": "./checkpoints/",
     "early_stop_number": 5
