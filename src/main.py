@@ -1,8 +1,8 @@
 import numpy as np
-import pandas as pd
+import json
 import random
 import torch
-
+from datetime import datetime
 import argparse
 
 from train import ResNet18Trainer
@@ -34,13 +34,46 @@ if __name__ == "__main__":
 
     torch.autograd.set_detect_anomaly(True)
     configer = Configer(args)
+    configer.device = configer.get("device").lower() if torch.cuda.is_available() else 'cpu'
+    
     model = ResNet18Trainer(configer)
     model.init_model()
-    train_history = model.train()
+    train_history, train_num, val_num, class_num = model.train()
+            
+    train_log = [
+    {
+        "epoch": train_history["epoch"][i],
+        "train_loss": train_history["train_loss"][i],
+        "train_accuracy": train_history["train_accuracy"][i],
+        "val_loss": train_history["val_loss"][i],
+        "val_accuracy": train_history["val_accuracy"][i],
+        "lr": train_history["lr"][i],
+    }
+    for i in range(len(train_history["epoch"]))
+    ]
     
+    output_dict = {
+        "metadata": {
+            "run_id": datetime.now().strftime("%Y%m%d_%H%M%S"),
+            "model_name": configer.get("model_name"),
+            "dataset": configer.get("dataset"),
+            "train_size": train_num,
+            "val_size": val_num,
+            "class_size": class_num,
+            "selected_classes": configer.get("selected_classes"),
+            "device": configer.device,
+            "batch_size": configer.get("data", "batch_size"),
+            "optimizer": configer.get("solver", "type"),
+            "seed": SEED
+            },
+        "summary": {
+            "best_val_acc": max(train_history["val_accuracy"]),
+            "best_epoch": train_history["epoch"][train_history["val_accuracy"].index(max(train_history["val_accuracy"]))],
+            "final_train_acc": train_history["train_accuracy"][-1],
+            "final_val_acc": train_history["val_accuracy"][-1],
+            },
+        "train_log": train_log
+    }
     
-    df = pd.DataFrame(train_history)
-    print(df.round(4))
-
-    # Save to CSV
-    df.to_csv("train_log.csv", index=False)
+    with open("logs/train_log_" + configer.get("model_name") + ".json", "w") as f:
+        json.dump(output_dict, f, indent=4)

@@ -14,7 +14,7 @@ class ModuleUtilizer(object):
     def __init__(self, configer):
         """Class constructor for Module utility"""
         self.configer = configer
-        self.device = torch.device(self.configer.get("device") if torch.cuda.is_available() else 'cpu')
+        self.device = torch.device(self.configer.device)
         print(f"Device (model_utilizer.py): {self.device}")
         self.save_policy = self.configer.get("checkpoints", "save_policy")
         if self.save_policy == "all":
@@ -47,28 +47,25 @@ class ModuleUtilizer(object):
         lr = self.configer.get('solver', 'base_lr')
         
         if optim == "Adam":
-            print(f"Using {optim}.")
             optimizer = torch.optim.Adam(
                 filter(lambda p: p.requires_grad, net.parameters()),
                 lr=lr,
                 weight_decay=decay)
 
         elif optim == "AdamW":
-            print(f"Using {optim}.")
             optimizer = torch.optim.AdamW(
                 filter(lambda p: p.requires_grad, net.parameters()),
                 lr=lr,
                 weight_decay=decay)
 
         elif optim == "RMSProp":
-            print(f"Using {optim}.")
             optimizer = torch.optim.RMSprop(
                 filter(lambda p: p.requires_grad, net.parameters()),
                 lr=lr,
                 weight_decay=decay)
             
         else:
-            raise NotImplementedError('Optimizer: {} is not valid.'.format(optim))
+            raise NotImplementedError(f"Optimizer: {optim} is not valid.")
 
         return optimizer, lr
 
@@ -126,9 +123,9 @@ class ModuleUtilizer(object):
         if not os.path.exists(checkpoints_dir):
             os.makedirs(checkpoints_dir)
         if self.save_policy == "all":
-            latest_name = '{}_{}.pth'.format(self.configer.get('checkpoints', 'save_name'), epoch)
+            latest_name = '{}_{}_{}.pth'.format(self.configer.get('checkpoints', 'save_name'), self.configer.get("model_name"), epoch)
         elif self.save_policy == "best":
-            latest_name = 'best_{}.pth'.format(self.configer.get('checkpoints', 'save_name'))
+            latest_name = 'best_{}_{}.pth'.format(self.configer.get('checkpoints', 'save_name'), self.configer.get("model_name"))
         else:
             raise ValueError(f'Policy {self.save_policy} is unknown.')
    

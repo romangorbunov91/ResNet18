@@ -1,8 +1,8 @@
 {
-  "name": "customResNet18",
+  "model_name": "customResNet18",
   "dataset": "tiny-imagenet-200",
   "device": "cuda",
-  "epochs": 30,
+  "epochs": 3,
   "data": {
     "data_path": "./datasets/",
     "workers": 4,

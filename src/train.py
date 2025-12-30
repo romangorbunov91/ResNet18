@@ -35,7 +35,7 @@ class ResNet18Trainer(object):
         self.val_loader = None
 
         # Module load and save utility.
-        self.device = torch.device(self.configer.get("device") if torch.cuda.is_available() else 'cpu')
+        self.device = torch.device(self.configer.device)
         print(f"Device (train.py): {self.device}")
         self.model_utility = ModuleUtilizer(self.configer) #: Model utility for load, save and update optimizer
         self.net = None
@@ -86,9 +86,9 @@ class ResNet18Trainer(object):
 
         # Resuming training, restoring optimizer value.
         if optim_dict is None:
-            print("Starting training from scratch.")
+            print(f"Starting training from scratch using {self.configer.get('solver', 'type')}.")
         else:
-            print("Resuming training from epoch {}.".format(self.epoch))
+            print(f"Resuming training from epoch {self.epoch} using {self.configer.get('solver', 'type')}.")
             self.optimizer.load_state_dict(optim_dict)
         
         # Selecting Dataset and DataLoader
@@ -222,7 +222,8 @@ class ResNet18Trainer(object):
                 break
             
             self.epoch += 1
-        return self.train_history
+            
+        return self.train_history, len(self.train_loader.dataset), len(self.val_loader.dataset), len(self.train_loader.dataset.class_names)
     
     def update_metrics(self, split: str, loss, bs, accuracy):
         self.losses[split].update(loss, bs)
