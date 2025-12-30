@@ -2,6 +2,8 @@ import numpy as np
 import json
 import random
 import torch
+from pathlib import Path
+import os
 from datetime import datetime
 import argparse
 
@@ -38,8 +40,8 @@ if __name__ == "__main__":
     
     model = ResNet18Trainer(configer)
     model.init_model()
-    train_history, train_num, val_num, class_num = model.train()
-            
+    train_history, train_num, val_num, class_num, model_param_count, model_str = model.train()
+
     train_log = [
     {
         "epoch": train_history["epoch"][i],
@@ -56,6 +58,7 @@ if __name__ == "__main__":
         "metadata": {
             "run_id": datetime.now().strftime("%Y%m%d_%H%M%S"),
             "model_name": configer.get("model_name"),
+            "model_param_count": model_param_count,
             "dataset": configer.get("dataset"),
             "train_size": train_num,
             "val_size": val_num,
@@ -72,8 +75,11 @@ if __name__ == "__main__":
             "final_train_acc": train_history["train_accuracy"][-1],
             "final_val_acc": train_history["val_accuracy"][-1],
             },
-        "train_log": train_log
+        "train_log": train_log,
+        "model_architecture": model_str
     }
-    
-    with open("logs/train_log_" + configer.get("model_name") + ".json", "w") as f:
+    logs_dir = Path(configer.get("checkpoints", "logs_dir"))
+    if not os.path.exists(logs_dir):
+        os.makedirs(logs_dir)
+    with open(logs_dir / f"train_log_{configer.get("model_name")}_{configer.get("solver", "type")}.json", "w") as f:
         json.dump(output_dict, f, indent=4)

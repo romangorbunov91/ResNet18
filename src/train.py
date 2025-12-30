@@ -222,8 +222,13 @@ class ResNet18Trainer(object):
                 break
             
             self.epoch += 1
-            
-        return self.train_history, len(self.train_loader.dataset), len(self.val_loader.dataset), len(self.train_loader.dataset.class_names)
+        
+        return self.train_history, \
+            len(self.train_loader.dataset), \
+            len(self.val_loader.dataset), \
+            len(self.train_loader.dataset.class_names), \
+            sum(p.numel() for p in self.net.parameters() if p.requires_grad), \
+            str(self.net)
     
     def update_metrics(self, split: str, loss, bs, accuracy):
         self.losses[split].update(loss, bs)
