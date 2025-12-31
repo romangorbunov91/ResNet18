@@ -3,6 +3,7 @@
 
 !.gitignore
 !/src/
+!/train_logs/
 !/scratch/
 
 !/README.md

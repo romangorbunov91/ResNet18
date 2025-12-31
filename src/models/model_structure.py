@@ -13,7 +13,6 @@ class BasicBlock(nn.Module):
         kernel_size (int): размер ядра свертки (должен быть нечётным).
         stride (int): шаг свертки.
     """
-
     def __init__(
             self,
             in_channels: int,
@@ -68,85 +67,47 @@ class BasicBlock(nn.Module):
         out = self.relu(out)
         return out
 
-class customResNet18(nn.Module):
-    expansion = 2
-    layer0_channels = 32
-    def __init__(self, num_classes: int, zero_init_residual: bool = False):
+class customResNet(nn.Module):
+    
+    def __init__(self,
+                 block,
+                 layers_config,
+                 layer0_channels: int,
+                 num_classes: int,
+                 zero_init_residual: bool = False):
         super().__init__()
+        self.in_channels = layer0_channels
 
         # Initial layers.        
         self.conv1 = nn.Conv2d(
             in_channels=3,
-            out_channels=self.layer0_channels,
+            out_channels=layer0_channels,
             kernel_size=7,
             stride=2,
             padding=3,
             bias=False
         )
         
-        self.bn1 = nn.BatchNorm2d(self.layer0_channels)
+        self.bn1 = nn.BatchNorm2d(layer0_channels)
         self.relu = nn.ReLU(inplace=True)
-        self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
+        self.maxpool = nn.MaxPool2d(kernel_size=3, stride=1, padding=1)
 
         # Main layers.
-        order = 0
-        self.layer1_0 = BasicBlock(
-            in_channels = self.layer0_channels,
-            out_channels = self.layer0_channels * self.expansion**order,
-            kernel_size = 3,
-            stride = 1
-        )
-        self.layer1_1 = BasicBlock(
-            in_channels = self.layer0_channels * self.expansion**order,
-            out_channels = self.layer0_channels * self.expansion**order,
-            kernel_size = 3,
-            stride = 1
-        )
+        self.layers = nn.ModuleList()
+        for order, layer_num in enumerate(layers_config):
+            if order == 0:
+                extand_flag = False
+            else:
+                extand_flag = True
+            layer = self._make_layer(
+                block = block,
+                out_channels = layer0_channels * 2**order,
+                layer_size = layer_num,
+                extand_flag = extand_flag)
+            self.layers.append(layer)
 
-        order += 1
-        self.layer2_0 = BasicBlock(
-            in_channels = self.layer0_channels * self.expansion**(order-1),
-            out_channels = self.layer0_channels * self.expansion**order,
-            kernel_size = 3,
-            stride = 2
-        )
-        self.layer2_1 = BasicBlock(
-            in_channels = self.layer0_channels * self.expansion,
-            out_channels = self.layer0_channels * self.expansion,
-            kernel_size = 3,
-            stride = 1
-        )
-
-        order += 1
-        self.layer3_0 = BasicBlock(
-            in_channels = self.layer0_channels * self.expansion**(order-1),
-            out_channels = self.layer0_channels * self.expansion**order,
-            kernel_size = 3,
-            stride = 2
-        )
-        self.layer3_1 = BasicBlock(
-            in_channels = self.layer0_channels * self.expansion**order,
-            out_channels = self.layer0_channels * self.expansion**order,
-            kernel_size = 3,
-            stride = 1
-        )
-              
-        order += 1
-        self.layer4_0 = BasicBlock(
-            in_channels = self.layer0_channels * self.expansion**(order-1),
-            out_channels = self.layer0_channels * self.expansion**order,
-            kernel_size = 3,
-            stride = 2
-        )
-        self.layer4_1 = BasicBlock(
-            in_channels = self.layer0_channels * self.expansion**order,
-            out_channels = self.layer0_channels * self.expansion**order,
-            kernel_size = 3,
-            stride = 1
-        )
-        
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
-        self.fc = nn.Linear(self.layer0_channels * self.expansion**order, num_classes)
+        self.fc = nn.Linear(self.in_channels * 2**order, num_classes)
 
         # Init weights (optional, but recommended).
         for m in self.modules():
@@ -161,7 +122,26 @@ class customResNet18(nn.Module):
             for m in self.modules():
                 if isinstance(m, BasicBlock):
                     nn.init.constant_(m.bn2.weight, 0)
+    
+    def _make_layer(self,
+                    block,
+                    out_channels,
+                    layer_size: int,
+                    extand_flag = True):
+        
+        layers = []
+        for idx in range(layer_size):
+            if idx == 0:
+                if extand_flag:
+                    in_channels = out_channels//2
+                else:
+                    in_channels = out_channels
+                layers.append(block(in_channels, out_channels, kernel_size=3, stride=2))
+            else:
+                layers.append(block(out_channels, out_channels, kernel_size=3, stride=1))
 
+        return nn.Sequential(*layers)
+    
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         #print('input:', x.shape)
         x = self.conv1(x)
@@ -170,24 +150,21 @@ class customResNet18(nn.Module):
         x = self.maxpool(x)
         #print('layer0:', x.shape)
         
-        x = self.layer1_0(x)
-        x = self.layer1_1(x)
-        #print('layer1:', x.shape)
-        
-        x = self.layer2_0(x)
-        x = self.layer2_1(x)
-        #print('layer2:', x.shape)
-
-        x = self.layer3_0(x)
-        x = self.layer3_1(x)
-        #print('layer3:', x.shape)
-       
-        x = self.layer4_0(x)
-        x = self.layer4_1(x)
-        #print('layer4:', x.shape)
+        for layer in self.layers:
+            x = layer(x)
+            #print('layer:', x.shape)
 
         x = self.avgpool(x)
         x = torch.flatten(x, 1) # безопасный аналог x.view(x.size(0), -1).
         x = self.fc(x)
         #print('output:', x.shape)
         return x
+    
+def customResNet18(num_classes: int, layers_config, zero_init_residual=False):
+    return customResNet(
+        block = BasicBlock,
+        layers_config = layers_config,
+        layer0_channels = 32,
+        num_classes = num_classes,
+        zero_init_residual = zero_init_residual
+    )

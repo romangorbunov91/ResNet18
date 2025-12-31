@@ -77,7 +77,9 @@ class ResNet18Trainer(object):
         """Initialize model and other data for procedure"""
         
         self.loss = nn.CrossEntropyLoss().to(self.device)
-        self.net = customResNet18(num_classes=self.n_classes)
+        self.net = customResNet18(
+            num_classes=self.n_classes,
+            layers_config = 4*[2])
 
         # Initializing training.
         self.net, self.epoch_init, optim_dict = self.model_utility.load_net(self.net)
