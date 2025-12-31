@@ -91,6 +91,9 @@ class ResNet18Trainer(object):
             print(f"Resuming training from epoch {self.epoch} using {self.configer.get('solver', 'type')}.")
             self.optimizer.load_state_dict(optim_dict)
         
+        self.model_size = sum(p.numel() for p in self.net.parameters() if p.requires_grad)
+        print(f"Model size: {self.model_size}")
+
         # Selecting Dataset and DataLoader
         if self.dataset == "tiny-imagenet-200":
             Dataset = TinyImageNetDataset
@@ -227,7 +230,7 @@ class ResNet18Trainer(object):
             len(self.train_loader.dataset), \
             len(self.val_loader.dataset), \
             len(self.train_loader.dataset.class_names), \
-            sum(p.numel() for p in self.net.parameters() if p.requires_grad), \
+            self.model_size, \
             str(self.net)
     
     def update_metrics(self, split: str, loss, bs, accuracy):

@@ -74,8 +74,7 @@ class customResNet18(nn.Module):
     def __init__(self, num_classes: int, zero_init_residual: bool = False):
         super().__init__()
 
-        # Initial layers.
-        '''
+        # Initial layers.        
         self.conv1 = nn.Conv2d(
             in_channels=3,
             out_channels=self.layer0_channels,
@@ -84,15 +83,15 @@ class customResNet18(nn.Module):
             padding=3,
             bias=False
         )
-        '''
-        self.bn1 = nn.BatchNorm2d(3)
+        
+        self.bn1 = nn.BatchNorm2d(self.layer0_channels)
         self.relu = nn.ReLU(inplace=True)
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
 
         # Main layers.
         order = 0
         self.layer1_0 = BasicBlock(
-            in_channels = 3,
+            in_channels = self.layer0_channels,
             out_channels = self.layer0_channels * self.expansion**order,
             kernel_size = 3,
             stride = 1
@@ -164,8 +163,8 @@ class customResNet18(nn.Module):
                     nn.init.constant_(m.bn2.weight, 0)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        #x = self.conv1(x)
         #print('input:', x.shape)
+        x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu(x)
         x = self.maxpool(x)
