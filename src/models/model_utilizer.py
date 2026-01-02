@@ -4,7 +4,7 @@ import torch.nn as nn
 
 from pathlib import Path
 
-class ModuleUtilizer(object):
+class ModelUtilizer(object):
     """Module utility class
 
     Attributes:
@@ -109,7 +109,6 @@ class ModuleUtilizer(object):
             Args:
                 net (torch.nn.Module): Module in use
                 optimizer (torch.nn.optimizer): Optimizer state to save
-                iters (int): Current iteration number to save
                 epoch (int): Current epoch number to save
         """
         
@@ -119,13 +118,13 @@ class ModuleUtilizer(object):
             'optimizer': optimizer.state_dict()
         }
         
-        checkpoints_dir = Path(self.configer.get('checkpoints', 'save_dir')) / self.configer.get("dataset")
+        checkpoints_dir = Path(self.configer.get('checkpoints', 'save_dir')) / self.configer.get("dataset", "name")
         if not os.path.exists(checkpoints_dir):
             os.makedirs(checkpoints_dir)
         if self.save_policy == "all":
-            latest_name = '{}_{}_{}.pth'.format(self.configer.get('checkpoints', 'save_name'), self.configer.get("model_name"), epoch)
+            latest_name = '{}_{}_{}.pth'.format(self.configer.get('checkpoints', 'save_name'), self.configer.get("model", "name"), epoch)
         elif self.save_policy == "best":
-            latest_name = 'best_{}_{}.pth'.format(self.configer.get('checkpoints', 'save_name'), self.configer.get("model_name"))
+            latest_name = 'best_{}_{}.pth'.format(self.configer.get('checkpoints', 'save_name'), self.configer.get("model", "name"))
         else:
             raise ValueError(f'Policy {self.save_policy} is unknown.')
    

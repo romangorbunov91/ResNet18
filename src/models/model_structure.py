@@ -1,7 +1,6 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from typing import List, Tuple, Optional
 
 class BasicBlock(nn.Module):
     """
@@ -107,7 +106,7 @@ class customResNet(nn.Module):
             self.layers.append(layer)
 
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
-        self.fc = nn.Linear(self.in_channels * 2**order, num_classes)
+        self.fc = nn.Linear(self.in_channels * 2**(len(layers_config)-1), num_classes)
 
         # Init weights (optional, but recommended).
         for m in self.modules():

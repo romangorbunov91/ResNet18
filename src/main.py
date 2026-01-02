@@ -57,13 +57,20 @@ if __name__ == "__main__":
     output_dict = {
         "metadata": {
             "run_id": datetime.now().strftime("%Y%m%d_%H%M%S"),
-            "model_name": configer.get("model_name"),
-            "model_param_count": model_param_count,
-            "dataset": configer.get("dataset"),
-            "train_size": train_num,
-            "val_size": val_num,
-            "class_size": class_num,
-            "selected_classes": configer.get("selected_classes"),
+            "model": {
+                "name": configer.get("model", "name"),
+                "layers_num": configer.get("model", "layers_num"),
+                "block_size": configer.get("model", "block_size"),
+                "activation_func": configer.get("model", "activation_func"),
+                "param_count": model_param_count
+            },
+            "dataset": {
+                "name": configer.get("dataset", "name"),
+                "train_size": train_num,
+                "val_size": val_num,
+                "class_size": class_num,
+                "selected_classes": configer.get("dataset", "selected_classes")
+            },
             "device": configer.device,
             "batch_size": configer.get("data", "batch_size"),
             "optimizer": configer.get("solver", "type"),
@@ -75,11 +82,20 @@ if __name__ == "__main__":
             "final_train_acc": train_history["train_accuracy"][-1],
             "final_val_acc": train_history["val_accuracy"][-1],
             },
-        "train_log": train_log,
-        "model_architecture": model_str
+        "model_architecture": model_str,
+        "train_log": train_log
     }
     logs_dir = Path(configer.get("checkpoints", "logs_dir"))
     if not os.path.exists(logs_dir):
         os.makedirs(logs_dir)
-    with open(logs_dir / f"train_log_{configer.get("model_name")}_{configer.get("solver", "type")}.json", "w") as f:
+    
+    log_file_name = (
+        f"train_log_{configer.get('model', 'name')}_"
+        f"{configer.get('model', 'activation_func')}_"
+        f"{str(configer.get('model', 'layers_num'))}_by_"
+        f"{str(configer.get('model', 'block_size'))}_"
+        f"{configer.get('solver', 'type')}.json"
+    )
+    
+    with open(logs_dir / log_file_name, "w") as f:
         json.dump(output_dict, f, indent=4)

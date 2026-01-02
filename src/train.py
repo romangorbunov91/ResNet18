@@ -14,7 +14,7 @@ from torch.utils.data import DataLoader
 from datasets.TinyImageNetDataset import TinyImageNetDataset
 
 # Import Model.
-from models.model_utilizer import ModuleUtilizer
+from models.model_utilizer import ModelUtilizer
 from models.model_structure import customResNet18
 
 # Setting seeds.
@@ -27,8 +27,8 @@ class ResNet18Trainer(object):
         self.configer = configer
 
         #: str: Type of dataset.
-        self.dataset = self.configer.get("dataset").lower()
-        self.data_path = Path(self.configer.get("data", "data_path")) / self.configer.get("dataset")
+        self.dataset = self.configer.get("dataset", "name").lower()
+        self.data_path = Path(self.configer.get("data", "data_path")) / self.configer.get("dataset", "name")
         
         # DataLoaders.
         self.train_loader = None
@@ -37,7 +37,7 @@ class ResNet18Trainer(object):
         # Module load and save utility.
         self.device = torch.device(self.configer.device)
         print(f"Device (train.py): {self.device}")
-        self.model_utility = ModuleUtilizer(self.configer) #: Model utility for load, save and update optimizer
+        self.model_utility = ModelUtilizer(self.configer) #: Model utility for load, save and update optimizer
         self.net = None
         self.lr = None
 
@@ -49,7 +49,7 @@ class ResNet18Trainer(object):
         self.val_transforms = None
         
         #: int: Chosen classes to work with.
-        self.selected_classes = self.configer.get('selected_classes')
+        self.selected_classes = self.configer.get("dataset", "selected_classes")
         self.n_classes = len(self.selected_classes)
         
         # Train and val losses.
@@ -78,8 +78,8 @@ class ResNet18Trainer(object):
         
         self.loss = nn.CrossEntropyLoss().to(self.device)
         self.net = customResNet18(
-            num_classes=self.n_classes,
-            layers_config = 4*[2])
+            num_classes = self.n_classes,
+            layers_config = self.configer.get("model", "layers_num")*[self.configer.get("model", "block_size")])
 
         # Initializing training.
         self.net, self.epoch_init, optim_dict = self.model_utility.load_net(self.net)
@@ -129,9 +129,9 @@ class ResNet18Trainer(object):
                 transform=self.train_transforms,
                 selected_classes=self.selected_classes
                 ),
-            batch_size=self.configer.get('data', 'batch_size'),
+            batch_size=self.configer.get("data", "batch_size"),
             shuffle=True,
-            num_workers=self.configer.get('data', 'workers'))
+            num_workers=self.configer.get("data", "workers"))
         
         self.val_loader = DataLoader(
             Dataset(
@@ -140,9 +140,9 @@ class ResNet18Trainer(object):
                 transform=self.val_transforms,
                 selected_classes=self.selected_classes
                 ),
-            batch_size=self.configer.get('data', 'batch_size'),
+            batch_size=self.configer.get("data", "batch_size"),
             shuffle=False,
-            num_workers=self.configer.get('data', 'workers'))
+            num_workers=self.configer.get("data", "workers"))
 
         print(f"Train size: {len(self.train_loader.dataset)}")
         print(f"Val size: {len(self.val_loader.dataset)}")
