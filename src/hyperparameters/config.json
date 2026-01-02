@@ -1,25 +1,32 @@
 {
-  "model_name": "customResNet18",
-  "dataset": "tiny-imagenet-200",
+  "model": {
+    "name": "customResNet18",
+    "layers_num": 4,
+    "block_size": 2,
+    "activation_func": "ReLU"
+  },
+  "dataset": {
+    "name": "tiny-imagenet-200",
+    "selected_classes": [
+      "n01910747",
+      "n02124075",
+      "n03854065",
+      "n02403003",
+      "n09256479",
+      "n02415577",
+      "n02814533",
+      "n04285008",
+      "n03796401",
+      "n04254777"
+    ]
+  },
   "device": "cuda",
-  "epochs": 30,
+  "epochs": 1,
   "data": {
     "data_path": "./datasets/",
     "workers": 4,
     "batch_size": 500
   },
-  "selected_classes": [
-    "n01910747",
-    "n02124075",
-    "n03854065",
-    "n02403003",
-    "n09256479",
-    "n02415577",
-    "n02814533",
-    "n04285008",
-    "n03796401",
-    "n04254777"
-  ],
   "solver": {
     "type": "Adam",
     "base_lr": 0.001,
