@@ -1,6 +1,7 @@
 # Создание и оптимизация ResNet18
+Поэтапная разработка кастомной ResNet18 модели для классификации Tiny ImageNet с анализом влияния различных архитектурных решений на производительность.
 
-https://github.com/physicorym/designing_neural_network_architectures_2025_01/tree/main/seminar_02
+[Полный текст задания](https://github.com/physicorym/designing_neural_network_architectures_2025_01/tree/main/seminar_02)
 
 ## Архитектуры моделей
 
@@ -91,6 +92,29 @@ https://github.com/physicorym/designing_neural_network_architectures_2025_01/tre
 | 4x2: `[2, 2, 2, 2]` | 2 802 538  |
 | 3x2: `[2, 2, 2]`    | 2 789 578  |
 | 4x3: `[3, 3, 3, 3]` | 4 371 178  |
+
+
+### 4.4: Сравнительная таблица всех экспериментов
+
+Создайте итоговую таблицу со всеми результатами:
+
+| Этап          | Конфигурация          | Параметры | Val Accuracy  | Train Accuracy    |
+|---------------|-----------------------|-----------|---------------|-------------------|
+| **Baseline**  | [2,2,2,2]             | X.XM      | XX.X%         | XX.X%             |
+| **3.1-A**     | [2,2,2,2]             | X.XM      | XX.X%         | XX.X%             |
+| **3.1-B**     | [2,2,2]               | X.XM      | XX.X%         | XX.X%             |
+| **3.2-A**     | [1,1,1,1]             | X.XM      | XX.X%         | XX.X%             |
+| **3.2-B**     | [2,2,2,2]             | X.XM      | XX.X%         | XX.X%             |
+| **3.2-C**     | [3,3,3,3]             | X.XM      | XX.X%         | XX.X%             |
+| **3.3-A**     | [2,2,2,2] ReLU        | X.XM      | XX.X%         | XX.X%             |
+| **3.3-B**     | [2,2,2,2] LeakyReLU   | X.XM      | XX.X%         | XX.X%             |
+| **3.3-C**     | [2,2,2,2] ELU         | X.XM      | XX.X%         | XX.X%             |
+| **3.3-D**     | [2,2,2,2] GELU        | X.XM      | XX.X%         | XX.X%             |
+| **Final**     | [2,2,2,2] ReLU        | X.XM      | XX.X%         | XX.X%             |
+
+# Выводы
+- Лучший результат показала конфигурация `[2, 2, 2, 2] ReLU`.
+- Есть ли признаки переобучения (большая разница между train и val)?
 
 
 ## Getting Started
