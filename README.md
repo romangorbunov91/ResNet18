@@ -8,7 +8,7 @@ https://github.com/physicorym/designing_neural_network_architectures_2025_01/tre
 - `"layers_num": 4`
 - `"block_size": 2`
 
-| Layer / Operation                                  | shape / size      |
+| Layer / Operation                                  | Shape / Size      |
 |----------------------------------------------------|-------------------|
 | Input                                              | `(B, 3, 64, 64)`  |
 | `Conv2d(3→32, kernel_size=7, stride=2, padding=3)` | `(B, 32, 32, 32)` |
@@ -28,7 +28,7 @@ https://github.com/physicorym/designing_neural_network_architectures_2025_01/tre
 - `"layers_num": 3`
 - `"block_size": 2`
 
-| Layer / Operation                                  | shape / size      |
+| Layer / Operation                                  | Shape / Size      |
 |----------------------------------------------------|-------------------|
 | Input                                              | `(B, 3, 64, 64)`  |
 | `Conv2d(3→64, kernel_size=7, stride=2, padding=3)` | `(B, 64, 32, 32)` |
@@ -47,7 +47,7 @@ https://github.com/physicorym/designing_neural_network_architectures_2025_01/tre
 - `"layers_num": 4`
 - `"block_size": 3`
 
-| Layer / Operation                                  | shape / size      |
+| Layer / Operation                                  | Shape / Size      |
 |----------------------------------------------------|-------------------|
 | Input                                              | `(B, 3, 64, 64)`  |
 | `Conv2d(3→32, kernel_size=7, stride=2, padding=3)` | `(B, 32, 32, 32)` |
@@ -67,7 +67,7 @@ https://github.com/physicorym/designing_neural_network_architectures_2025_01/tre
 - `"layers_num": 4`
 - `"block_size": 1`
 
-| Layer / Operation                                  | shape / size      |
+| Layer / Operation                                  | Shape / Size      |
 |----------------------------------------------------|-------------------|
 | Input                                              | `(B, 3, 64, 64)`  |
 | `Conv2d(3→32, kernel_size=7, stride=2, padding=3)` | `(B, 32, 32, 32)` |
