@@ -21,7 +21,7 @@
     ]
   },
   "device": "cuda",
-  "epochs": 1,
+  "epochs": 30,
   "data": {
     "data_path": "./datasets/",
     "workers": 4,

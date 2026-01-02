@@ -71,23 +71,23 @@ class customResNet(nn.Module):
     def __init__(self,
                  block,
                  layers_config,
-                 layer0_channels: int,
+                 in_channels: int,
                  num_classes: int,
                  zero_init_residual: bool = False):
         super().__init__()
-        self.in_channels = layer0_channels
+        self.layer0_channels = in_channels
 
         # Initial layers.        
         self.conv1 = nn.Conv2d(
-            in_channels=3,
-            out_channels=layer0_channels,
-            kernel_size=7,
-            stride=2,
-            padding=3,
-            bias=False
+            in_channels = 3,
+            out_channels = self.layer0_channels,
+            kernel_size = 7,
+            stride = 2,
+            padding = 3,
+            bias = False
         )
         
-        self.bn1 = nn.BatchNorm2d(layer0_channels)
+        self.bn1 = nn.BatchNorm2d(self.layer0_channels)
         self.relu = nn.ReLU(inplace=True)
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=1, padding=1)
 
@@ -95,18 +95,19 @@ class customResNet(nn.Module):
         self.layers = nn.ModuleList()
         for order, layer_num in enumerate(layers_config):
             if order == 0:
-                extand_flag = False
+                extend_flag = False
             else:
-                extand_flag = True
+                extend_flag = True
             layer = self._make_layer(
                 block = block,
-                out_channels = layer0_channels * 2**order,
+                out_channels = self.layer0_channels * 2**order,
                 layer_size = layer_num,
-                extand_flag = extand_flag)
+                extend_flag = extend_flag
+                )
             self.layers.append(layer)
 
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
-        self.fc = nn.Linear(self.in_channels * 2**(len(layers_config)-1), num_classes)
+        self.fc = nn.Linear(self.layer0_channels * 2**(len(layers_config)-1), num_classes)
 
         # Init weights (optional, but recommended).
         for m in self.modules():
@@ -126,13 +127,13 @@ class customResNet(nn.Module):
                     block,
                     out_channels,
                     layer_size: int,
-                    extand_flag = True):
-        
+                    extend_flag = True
+                    ):
         layers = []
         for idx in range(layer_size):
             if idx == 0:
-                if extand_flag:
-                    in_channels = out_channels//2
+                if extend_flag:
+                    in_channels = out_channels // 2
                 else:
                     in_channels = out_channels
                 layers.append(block(in_channels, out_channels, kernel_size=3, stride=2))
@@ -159,11 +160,16 @@ class customResNet(nn.Module):
         #print('output:', x.shape)
         return x
     
-def customResNet18(num_classes: int, layers_config, zero_init_residual=False):
+def customResNet18(
+    num_classes: int,
+    layers_config,
+    in_channels: int,
+    zero_init_residual=False
+    ):
     return customResNet(
         block = BasicBlock,
         layers_config = layers_config,
-        layer0_channels = 32,
+        in_channels = in_channels,
         num_classes = num_classes,
         zero_init_residual = zero_init_residual
     )
