@@ -79,8 +79,11 @@ class ResNet18Trainer(object):
         self.loss = nn.CrossEntropyLoss().to(self.device)
         self.net = customResNet18(
             num_classes = self.n_classes,
-            in_channels = 32,
-            layers_config = self.configer.get("model", "layers_num")*[self.configer.get("model", "block_size")])
+            layers_config = self.configer.get("model", "layers_num")*[self.configer.get("model", "block_size")],
+            activation = self.configer.get("model", "activation").lower(),
+            in_channels = 3,
+            layer0_channels = 32
+        )
 
         # Initializing training.
         self.net, self.epoch_init, optim_dict = self.model_utility.load_net(self.net)

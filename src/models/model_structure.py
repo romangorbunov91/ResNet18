@@ -1,6 +1,23 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
+
+def set_activation(activation: str) -> nn.Module:
+    if not isinstance(activation, str):
+        raise TypeError(f"Activation must be a string, got {type(activation).__name__}")
+    match activation.lower():
+        case "relu":
+            return nn.ReLU(inplace=True)
+        case "leaky_relu":
+            return nn.LeakyReLU(negative_slope=0.01, inplace=True)
+        case "elu":
+            return nn.ELU(alpha=1.0, inplace=False)
+        case "gelu":
+            return nn.GELU()
+        case _:
+            raise ValueError(
+                    f"Unsupported activation: '{activation}'. "
+                    "Supported: 'relu', 'leaky_relu', 'elu', 'gelu'."
+                )
 
 class BasicBlock(nn.Module):
     """
@@ -16,6 +33,7 @@ class BasicBlock(nn.Module):
             self,
             in_channels: int,
             out_channels: int,
+            activation: str,
             kernel_size: int,
             stride: int
         ):
@@ -34,7 +52,7 @@ class BasicBlock(nn.Module):
             bias=False
         )
         self.bn1 = nn.BatchNorm2d(out_channels)
-        self.relu = nn.ReLU(inplace=True)
+        self.activation = set_activation(activation)
         self.conv2 = nn.Conv2d(
             out_channels,
             out_channels,
@@ -57,13 +75,13 @@ class BasicBlock(nn.Module):
 
         out = self.conv1(x)
         out = self.bn1(out)
-        out = self.relu(out)
+        out = self.activation(out)
 
         out = self.conv2(out)
         out = self.bn2(out)
 
         out += identity
-        out = self.relu(out)
+        out = self.activation(out)
         return out
 
 class customResNet(nn.Module):
@@ -71,15 +89,19 @@ class customResNet(nn.Module):
     def __init__(self,
                  block,
                  layers_config,
+                 activation: str,
                  in_channels: int,
+                 layer0_channels: int,
                  num_classes: int,
                  zero_init_residual: bool = False):
+        
         super().__init__()
-        self.layer0_channels = in_channels
+        
+        self.layer0_channels = layer0_channels
 
         # Initial layers.        
         self.conv1 = nn.Conv2d(
-            in_channels = 3,
+            in_channels = in_channels,
             out_channels = self.layer0_channels,
             kernel_size = 7,
             stride = 2,
@@ -88,7 +110,7 @@ class customResNet(nn.Module):
         )
         
         self.bn1 = nn.BatchNorm2d(self.layer0_channels)
-        self.relu = nn.ReLU(inplace=True)
+        self.activation = set_activation(activation)        
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=1, padding=1)
 
         # Main layers.
@@ -102,6 +124,7 @@ class customResNet(nn.Module):
                 block = block,
                 out_channels = self.layer0_channels * 2**order,
                 layer_size = layer_num,
+                activation = activation,
                 extend_flag = extend_flag
                 )
             self.layers.append(layer)
@@ -110,23 +133,42 @@ class customResNet(nn.Module):
         self.fc = nn.Linear(self.layer0_channels * 2**(len(layers_config)-1), num_classes)
 
         # Init weights (optional, but recommended).
-        for m in self.modules():
-            if isinstance(m, nn.Conv2d):
-                nn.init.kaiming_normal_(m.weight, mode="fan_out", nonlinearity="relu")
-            elif isinstance(m, nn.BatchNorm2d):
-                nn.init.constant_(m.weight, 1)
-                nn.init.constant_(m.bias, 0)
+        for module in self.modules():
+            if isinstance(module, nn.Conv2d):
+                if activation == "leaky_relu":
+                    leaky_slope = 0.01
+                    nn.init.kaiming_normal_(
+                        module.weight, 
+                        mode="fan_out", 
+                        nonlinearity="leaky_relu", 
+                        a=leaky_slope
+                    )
+                # activation == "relu" or other.
+                else:
+                    nn.init.kaiming_normal_(
+                        module.weight,
+                        mode="fan_out",
+                        nonlinearity="relu"
+                        )
+                if activation == "elu":
+                    # Используем ReLU gain + эмпирический коэффициент
+                    # (gain_EL U ≈ 1.55, gain_ReLU = √2 ≈ 1.414 → scale ≈ 1.55/1.414 ≈ 1.096)
+                    module.weight.data *= 1.096
+            elif isinstance(module, nn.BatchNorm2d):
+                nn.init.constant_(module.weight, 1)
+                nn.init.constant_(module.bias, 0)
 
         # Zero-init batch norm in residual branches (improves convergence).
         if zero_init_residual:
-            for m in self.modules():
-                if isinstance(m, BasicBlock):
-                    nn.init.constant_(m.bn2.weight, 0)
+            for module in self.modules():
+                if isinstance(module, BasicBlock):
+                    nn.init.constant_(module.bn2.weight, 0)
     
     def _make_layer(self,
                     block,
                     out_channels,
                     layer_size: int,
+                    activation: str,
                     extend_flag = True
                     ):
         layers = []
@@ -136,9 +178,9 @@ class customResNet(nn.Module):
                     in_channels = out_channels // 2
                 else:
                     in_channels = out_channels
-                layers.append(block(in_channels, out_channels, kernel_size=3, stride=2))
+                layers.append(block(in_channels, out_channels, activation, kernel_size=3, stride=2))
             else:
-                layers.append(block(out_channels, out_channels, kernel_size=3, stride=1))
+                layers.append(block(out_channels, out_channels, activation, kernel_size=3, stride=1))
 
         return nn.Sequential(*layers)
     
@@ -146,7 +188,7 @@ class customResNet(nn.Module):
         #print('input:', x.shape)
         x = self.conv1(x)
         x = self.bn1(x)
-        x = self.relu(x)
+        x = self.activation(x)
         x = self.maxpool(x)
         #print('layer0:', x.shape)
         
@@ -163,13 +205,17 @@ class customResNet(nn.Module):
 def customResNet18(
     num_classes: int,
     layers_config,
+    activation: str,
     in_channels: int,
+    layer0_channels: int,
     zero_init_residual=False
     ):
     return customResNet(
         block = BasicBlock,
         layers_config = layers_config,
+        activation = activation,
         in_channels = in_channels,
+        layer0_channels = layer0_channels,
         num_classes = num_classes,
         zero_init_residual = zero_init_residual
     )

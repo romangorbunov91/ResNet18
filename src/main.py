@@ -61,7 +61,7 @@ if __name__ == "__main__":
                 "name": configer.get("model", "name"),
                 "layers_num": configer.get("model", "layers_num"),
                 "block_size": configer.get("model", "block_size"),
-                "activation_func": configer.get("model", "activation_func"),
+                "activation": configer.get("model", "activation"),
                 "param_count": model_param_count
             },
             "dataset": {
@@ -91,7 +91,7 @@ if __name__ == "__main__":
     
     log_file_name = (
         f"train_log_{configer.get('model', 'name')}_"
-        f"{configer.get('model', 'activation_func')}_"
+        f"{configer.get('model', 'activation')}_"
         f"{str(configer.get('model', 'layers_num'))}_by_"
         f"{str(configer.get('model', 'block_size'))}_"
         f"{configer.get('solver', 'type')}.json"

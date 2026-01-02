@@ -3,7 +3,7 @@
     "name": "customResNet18",
     "layers_num": 4,
     "block_size": 2,
-    "activation_func": "ReLU"
+    "activation": "ReLU"
   },
   "dataset": {
     "name": "tiny-imagenet-200",
