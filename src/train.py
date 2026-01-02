@@ -88,7 +88,7 @@ class ResNet18Trainer(object):
             layers_config = self.configer.get("model", "layers_num")*[self.configer.get("model", "block_size")],
             activation = self.configer.get("model", "activation").lower(),
             in_channels = image_size[0],
-            layer0_channels = image_size[1] // 2
+            layer0_channels = 256 // 2**(self.configer.get("model", "layers_num") - 1)
         )
 
         # Initializing training.

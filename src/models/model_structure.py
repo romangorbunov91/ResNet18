@@ -130,7 +130,10 @@ class customResNet(nn.Module):
             self.layers.append(layer)
 
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
-        self.fc = nn.Linear(self.layer0_channels * 2**(len(layers_config)-1), num_classes)
+        self.fc = nn.Linear(
+            in_features = self.layer0_channels * 2**(len(layers_config)-1),
+            out_features = num_classes
+            )
 
         # Init weights (optional, but recommended).
         for module in self.modules():
@@ -185,21 +188,26 @@ class customResNet(nn.Module):
         return nn.Sequential(*layers)
     
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        #print('input:', x.shape)
+        print('input:', x.shape)
         x = self.conv1(x)
+        print('conv1:', x.shape)
         x = self.bn1(x)
+        print('bn1:', x.shape)
         x = self.activation(x)
+        print('activation:', x.shape)
         x = self.maxpool(x)
-        #print('layer0:', x.shape)
+        print('maxpool:', x.shape)
         
         for layer in self.layers:
             x = layer(x)
-            #print('layer:', x.shape)
+            print('layer:', x.shape)
 
         x = self.avgpool(x)
+        print('avgpool:', x.shape)
         x = torch.flatten(x, 1) # безопасный аналог x.view(x.size(0), -1).
+        print('flatten:', x.shape)
         x = self.fc(x)
-        #print('output:', x.shape)
+        print('output:', x.shape)
         return x
     
 def customResNet18(
