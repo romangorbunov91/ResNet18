@@ -76,13 +76,19 @@ class ResNet18Trainer(object):
     def init_model(self):
         """Initialize model and other data for procedure"""
         
+        if self.dataset == "tiny-imagenet-200":
+            # RGB.
+            image_size = [3, 64, 64]
+        else:
+            raise NotImplementedError(f"Dataset not supported: {self.configer.get('dataset', 'name')}")
+        
         self.loss = nn.CrossEntropyLoss().to(self.device)
         self.net = customResNet18(
             num_classes = self.n_classes,
             layers_config = self.configer.get("model", "layers_num")*[self.configer.get("model", "block_size")],
             activation = self.configer.get("model", "activation").lower(),
-            in_channels = 3,
-            layer0_channels = 32
+            in_channels = image_size[0],
+            layer0_channels = image_size[1] // 2
         )
 
         # Initializing training.
@@ -123,7 +129,7 @@ class ResNet18Trainer(object):
             ])
             
         else:
-            raise NotImplementedError(f"Dataset not supported: {self.configer.get('dataset')}")
+            raise NotImplementedError(f"Dataset not supported: {self.configer.get('dataset', 'name')}")
 
         # Setting Dataloaders.
         self.train_loader = DataLoader(
