@@ -5,6 +5,7 @@
 !/src/
 !/train_logs/
 !/scratch/
+!/readme_img/
 
 !/README.md
 !/requirements.txt
