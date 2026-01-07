@@ -117,6 +117,8 @@
 - Есть ли признаки переобучения (большая разница между train и val)?
 
 
+Визуализация через https://netron.app/
+
 ## Getting Started
 These instructions will give you a copy of the project up and running on your local machine for development and testing 
 purposes. There isn't much to do, just install the prerequisites and download all the files.
