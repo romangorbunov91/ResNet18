@@ -1,9 +1,10 @@
+import os
 import numpy as np
+import torch
 import json
 import random
-import torch
+from torchview import draw_graph
 from pathlib import Path
-import os
 from datetime import datetime
 import argparse
 
@@ -90,12 +91,25 @@ if __name__ == "__main__":
         os.makedirs(logs_dir)
     
     log_file_name = (
-        f"train_log_{configer.get('model', 'name')}_"
-        f"{configer.get('model', 'activation')}_"
-        f"{str(configer.get('model', 'layers_num'))}_by_"
+        f"mdl_"
+        f"{str(configer.get('model', 'layers_num'))}x"
         f"{str(configer.get('model', 'block_size'))}_"
+        f"{configer.get('model', 'activation')}_"
         f"{configer.get('solver', 'type')}.json"
     )
     
     with open(logs_dir / log_file_name, "w") as f:
         json.dump(output_dict, f, indent=4)
+        
+    
+    img_dir = Path("./readme_img/")
+    if not os.path.exists(img_dir):
+        os.makedirs(img_dir)
+    model_graph = draw_graph(
+        model, 
+        input_size=(1, 3, 64, 64),
+        expand_nested=True,
+        save_graph=True,
+        filename = img_dir / img_dir
+    )
+    model_graph.visual_graph
