@@ -67,20 +67,44 @@ Output
 
 ### 2.4. Скрипт обучения
 
-#### Конфигурирование
-[config.json](src\hyperparameters\config.json)
+#### Конфигурирование проекта
+Гиперпараметры задаются в файле [config.json](src\hyperparameters\config.json), включая:
+- архитектура модели: `layers_num`, `block_size`, `activation`;
+- выбранные классы датасета: `selected_classes`;
+- параметры обучения: `epochs`, `batch_size`, `solver`;
+- политика обучения: `save_policy` - "all", "best" (политика "early_stop" выбирается установкой параметра "early_stop_number" > 0).
 
-`save_policy`: "all", "best"
-"early_stop" if "early_stop_number" <= 0
-#### Сам цикл
-[train.py](src\train.py)
+#### Обучение
+Обучение реализовано в [train.py](src\train.py) в виде класса `ResNet18Trainer` со следующими методами:
+- `__init__` - инициализация переменных класса в соответствии с гиперпараметрами из файла конфигурации проекта;
+- `init_model` - установка функции ошибки, инициализация/загрузка модели, загрузка датасета;
+- `__train` - обучение по батчам;
+- `__val` - валидация по батчам;
+- `train` - основной цикл обучения/валидации по эпохам;
+- `update_metrics` - аккумулирование losses/accuracy посредством [average_meter.py](src\utils\average_meter.py).
 
-#### 
+Рекомендуется работать с моделью посредством [main.py](src\main.py).
 
 ```
 python src/main.py --hypes src\hyperparameters\config.json
 ```
-- `--hypes`, path to configuration file.
+
+**Запуск на обучение**
+```
+python src\main.py --hypes src\hyperparameters\config.json 
+```
+
+**Запуск на дообучение**
+```
+python src\main.py --hypes src\hyperparameters\config.json --resume checkpoints\tiny-imagenet-200\best_train_customResNet18.pth
+```
+
+**Запуск на тест**
+```
+python src\main.py --hypes src\hyperparameters\config.json --resume checkpoints\tiny-imagenet-200\best_train_customResNet18.pth --phase test
+```
+
+Логи обучения хранятся в [train_logs](train_logs).
 
 #### 2.5: Визуализация базовых результатов
 
@@ -175,7 +199,6 @@ python src/main.py --hypes src\hyperparameters\config.json
 | 4x2: `[2, 2, 2, 2]` | 2 802 538  |
 | 3x2: `[2, 2, 2]`    | 2 789 578  |
 | 4x3: `[3, 3, 3, 3]` | 4 371 178  |
-
 
 ### 4.4: Сравнительная таблица всех экспериментов
 
