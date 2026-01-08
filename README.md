@@ -1,31 +1,35 @@
 # Создание и оптимизация ResNet18
-Поэтапная разработка кастомной ResNet18 модели для классификации Tiny ImageNet с анализом влияния различных архитектурных решений на производительность.
+Поэтапная разработка кастомной ResNet18 модели-классификатора с анализом влияния различных архитектурных решений на производительность.
 
 ## Часть 1: Подготовка данных
-Создан датакласс [TinyImageNetDataset.py](src\datasets\TinyImageNetDataset.py), наследующий от `torch.utils.data.Dataset`:
-- метод `__init__`: инициализация путей к данным а аннотациям, загрузка тренировочного и валидационного датасетов по выбранным классам;
-- метод `__len__`: возврат количества примеров в датасете;
-- метод `__getitem__`: загрузка и возврат одного примера (изображение + метка).
+Создан датакласс [TinyImageNetDataset.py](src\datasets\TinyImageNetDataset.py), наследующий от `torch.utils.data.Dataset` следующие методы:
+- `__init__`: инициализация путей к данным и аннотациям, загрузка тренировочного и валидационного датасетов по выбранным классам;
+- `__len__`: возврат количества примеров в датасете;
+- `__getitem__`: загрузка и возврат одного примера (изображение + метка).
 
 ## Часть 2: Базовая архитектура ResNet18
 
-Архитектура модели изначально сделана универсальной.
-[model_structure.py](src\models\model_structure.py)
+В [model_structure.py](src\models\model_structure.py) реализован `class customResNet18` с возможностью инициализации архитектуры модели под следующие входные параметры:
+- `num_classes` - количество классов на выходе; например, `num_classes=10`;
+- `layers_config` - слои модели в формате списка; например, `[2, 2, 2, 2]` - `"layers_num": 4`, `"block_size": 2`;
+- `activation` - функция активации (`ReLU`, `LeakyReLU`, `ELU`, или `GELU`);
+- `in_channels` - количество входных каналов; например, для RGB-картинок `in_channels=3`;
+- `layer0_channels` - количество каналов на входе первого базового слоя.
 
 ### 2.1. Реализация Basic Block
 
-Создан класс `class BasicBlock` в [model_structure.py](src\models\model_structure.py). Реализована инициализация с выбором функции активации в слое `acyivation`.
+В [model_structure.py](src\models\model_structure.py) реализован `class BasicBlock` с выбором функции активации в слое `activation` при инициализации.
 
 ```
 Input →  →  →  →  →  →  →  →  →  →  →  →  →  →  →  →  →  →  →  →  →  →  →  →
   ↓                                                                     
-Conv2d(kernel_size=kernel_size, padding=kernel_size//2, stride=stride)      ↓
+Conv2d(kernel_size=kernel_size, stride=stride, padding=kernel_size//2)      ↓
   ↓                                                                     
 BatchNorm2d                                                                 ↓
   ↓                                                                     
 activation (ReLU, LeakyReLU, ELU, or GELU)                                  ↓
   ↓
-Conv2d(kernel_size=kernel_size, padding=kernel_size//2, stride=1)           ↓
+Conv2d(kernel_size=kernel_size, stride=1, padding=kernel_size//2)           ↓
   ↓
 BatchNorm2d                                                                 ↓
   ↓
@@ -35,7 +39,9 @@ activation (ReLU, LeakyReLU, ELU, or GELU)
   ↓
 Output
 ```
-### 2.2. Архитектура базовая: `[2, 2, 2, 2]`
+### 2.2. Реализация ResNet18
+
+#### Архитектура базовая (baseline): `[2, 2, 2, 2]`
 - `"layers_num": 4`
 - `"block_size": 2`
 
@@ -56,8 +62,8 @@ Output
 | Output                                             | `(B, 10)`         |
 
 ### 2.3. Ограничения для базовой модели
-- Общее количество параметров - не более 5 миллионов: **2802538**.
-- Максимальное количество каналов - до 512: **256**.
+- Общее количество параметров - не более 5 миллионов: ✅ **2802538**.
+- Максимальное количество каналов - до 512: ✅ **256**.
 
 ### 2.4. Скрипт обучения
 
@@ -78,7 +84,7 @@ python src/main.py --hypes src\hyperparameters\config.json
 
 #### 2.5: Визуализация базовых результатов
 
-Визуализация результатов обучения выполнена в [main_notebook.ipynb](main_notebook.ipynb).
+Графики построены в [main_notebook.ipynb](main_notebook.ipynb).
 
 <p align="center" width="100%">
   <img src="./readme_img/loss_acc_4x2_ReLU_Adam.png"

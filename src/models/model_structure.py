@@ -26,6 +26,7 @@ class BasicBlock(nn.Module):
     Args:
         in_channels (int): количество входных каналов.
         out_channels (int): количество выходных каналов.
+        activation (str): функция активации.
         kernel_size (int): размер ядра свертки (должен быть нечётным).
         stride (int): шаг свертки.
     """
@@ -48,7 +49,7 @@ class BasicBlock(nn.Module):
             out_channels,
             kernel_size=kernel_size,
             stride=stride,
-            padding=kernel_size // 2,
+            padding=kernel_size//2,
             bias=False
         )
         self.bn1 = nn.BatchNorm2d(out_channels)
@@ -58,7 +59,7 @@ class BasicBlock(nn.Module):
             out_channels,
             kernel_size=kernel_size,
             stride=1,
-            padding=kernel_size // 2,
+            padding=kernel_size//2,
             bias=False
         )
         self.bn2 = nn.BatchNorm2d(out_channels)

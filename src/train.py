@@ -76,18 +76,14 @@ class ResNet18Trainer(object):
     def init_model(self):
         """Initialize model and other data for procedure"""
         
-        if self.dataset == "tiny-imagenet-200":
-            # RGB.
-            image_size = [3, 64, 64]
-        else:
-            raise NotImplementedError(f"Dataset not supported: {self.configer.get('dataset', 'name')}")
+        img_size = self.configer.get('dataset', 'img_size')
         
         self.loss = nn.CrossEntropyLoss().to(self.device)
         self.net = customResNet18(
             num_classes = self.n_classes,
             layers_config = self.configer.get("model", "layers_num")*[self.configer.get("model", "block_size")],
             activation = self.configer.get("model", "activation").lower(),
-            in_channels = image_size[0],
+            in_channels = img_size[0],
             layer0_channels = 256 // 2**(self.configer.get("model", "layers_num") - 1)
         )
 
@@ -114,7 +110,7 @@ class ResNet18Trainer(object):
 
             self.train_transforms = transforms.Compose([
                 transforms.Resize((72, 72)),
-                transforms.RandomResizedCrop(64, scale=(0.8, 1.0)),
+                transforms.RandomResizedCrop(img_size[1], scale=(0.8, 1.0)),
                 transforms.RandomHorizontalFlip(p=0.5),
                 transforms.RandomRotation(10),
                 transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1),
@@ -123,7 +119,7 @@ class ResNet18Trainer(object):
             ])
 
             self.val_transforms = transforms.Compose([
-                transforms.Resize((64, 64)),
+                transforms.Resize(tuple(img_size[1:])),
                 transforms.ToTensor(),
                 normalize,
             ])

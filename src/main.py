@@ -101,13 +101,13 @@ if __name__ == "__main__":
     with open(logs_dir / log_file_name, "w") as f:
         json.dump(output_dict, f, indent=4)
         
-    
     img_dir = Path("./readme_img/")
     if not os.path.exists(img_dir):
         os.makedirs(img_dir)
+    img_size = configer.get('dataset', 'img_size')
     model_graph = draw_graph(
         model, 
-        input_size=(1, 3, 64, 64),
+        input_size=(1, *img_size),
         expand_nested=True,
         save_graph=True,
         filename = img_dir / img_dir
