@@ -1,11 +1,41 @@
 # Создание и оптимизация ResNet18
 Поэтапная разработка кастомной ResNet18 модели для классификации Tiny ImageNet с анализом влияния различных архитектурных решений на производительность.
 
-[Полный текст задания](https://github.com/physicorym/designing_neural_network_architectures_2025_01/tree/main/seminar_02)
+## Часть 1: Подготовка данных
+Создан датакласс [TinyImageNetDataset.py](src\datasets\TinyImageNetDataset.py), наследующий от `torch.utils.data.Dataset`:
+- метод `__init__`: инициализация путей к данным а аннотациям, загрузка тренировочного и валидационного датасетов по выбранным классам;
+- метод `__len__`: возврат количества примеров в датасете;
+- метод `__getitem__`: загрузка и возврат одного примера (изображение + метка).
 
-## Архитектуры моделей
+## Часть 2: Базовая архитектура ResNet18
 
-### Архитектура базовая: `[2, 2, 2, 2]`
+Архитектура модели изначально сделана универсальной.
+[model_structure.py](src\models\model_structure.py)
+
+### 2.1. Реализация Basic Block
+
+Создан класс `class BasicBlock` в [model_structure.py](src\models\model_structure.py). Реализована инициализация с выбором функции активации в слое `acyivation`.
+
+```
+Input →  →  →  →  →  →  →  →  →  →  →  →  →  →  →  →  →  →  →  →  →  →  →  →
+  ↓                                                                     
+Conv2d(kernel_size=kernel_size, padding=kernel_size//2, stride=stride)      ↓
+  ↓                                                                     
+BatchNorm2d                                                                 ↓
+  ↓                                                                     
+activation (ReLU, LeakyReLU, ELU, or GELU)                                  ↓
+  ↓
+Conv2d(kernel_size=kernel_size, padding=kernel_size//2, stride=1)           ↓
+  ↓
+BatchNorm2d                                                                 ↓
+  ↓
+  + ← Skip Connection  ←  ←  ←  ←  ←  ← downsample  ←  ←  ←  ←  ←  ←  ←  ←  ←
+  ↓
+activation (ReLU, LeakyReLU, ELU, or GELU)
+  ↓
+Output
+```
+### 2.2. Архитектура базовая: `[2, 2, 2, 2]`
 - `"layers_num": 4`
 - `"block_size": 2`
 
@@ -25,7 +55,45 @@
 | `Linear(256→ 10)`                                  | `(B, 10)`         |
 | Output                                             | `(B, 10)`         |
 
-### Архитектура с меньшим количеством слоев: `[2, 2, 2]`
+### 2.3. Ограничения для базовой модели
+- Общее количество параметров - не более 5 миллионов: **2802538**.
+- Максимальное количество каналов - до 512: **256**.
+
+### 2.4. Скрипт обучения
+
+#### Конфигурирование
+[config.json](src\hyperparameters\config.json)
+
+`save_policy`: "all", "best"
+"early_stop" if "early_stop_number" <= 0
+#### Сам цикл
+[train.py](src\train.py)
+
+#### 
+
+```
+python src/main.py --hypes src\hyperparameters\config.json
+```
+- `--hypes`, path to configuration file.
+
+#### 2.5: Визуализация базовых результатов
+
+Визуализация результатов обучения выполнена в [main_notebook.ipynb](main_notebook.ipynb).
+
+<p align="center" width="100%">
+  <img src="./readme_img/loss_acc_4x2_ReLU_Adam.png"
+  style="background-color: white; padding: 0;
+  width="100%" />
+</p>
+
+### Выводы по базовой модели
+
+- После 10й эпохи обучения качество на валидации не меняется, модель переходит в переобучение.
+- Достигается точность на валидации около 55%.
+
+## Часть 3: Поэтапная оптимизация модели
+### 3.1: Оптимизация количества каналов
+#### Архитектура с меньшим количеством слоев: `[2, 2, 2]`
 - `"layers_num": 3`
 - `"block_size": 2`
 
@@ -44,7 +112,10 @@
 | `Linear(256→10)`                                   | `(B, 10)`         |
 | Output                                             | `(B, 10)`         |
 
-### Архитектура с увеличенной глубиной слоев `[3, 3, 3, 3]`
+
+### 3.2: Эксперименты с количеством residual блоков
+
+#### Архитектура с увеличенной глубиной слоев `[3, 3, 3, 3]`
 - `"layers_num": 4`
 - `"block_size": 3`
 
@@ -64,7 +135,7 @@
 | `Linear(256→10)`                                   | `(B, 10)`         |
 | Output                                             | `(B, 10)`         |
 
-### Архитектура с уменьшенной глубиной слоев `[1, 1, 1, 1]`
+#### Архитектура с уменьшенной глубиной слоев `[1, 1, 1, 1]`
 - `"layers_num": 4`
 - `"block_size": 1`
 
@@ -83,6 +154,12 @@
 | `Flatten()`                                        | `(B, 256)`        |
 | `Linear(256→10)`                                   | `(B, 10)`         |
 | Output                                             | `(B, 10)`         |
+
+### 3.3: Эксперименты с функциями активации
+
+
+
+## Часть 4: Финальная модель и тестирование
 
 ### Суммарное количество обучаемых параметров
 
@@ -151,10 +228,7 @@ pip freeze > requirements.txt
 
 
 ## Usage
-```
-python src/main.py --hypes src\hyperparameters\config.json
-```
-- `--hypes`, path to configuration file.
+см. раздел
 
-`save_policy`: "all", "best"
-"early_stop" if "early_stop_number" <= 0
+## Reference
+- [Полный текст задания](https://github.com/physicorym/designing_neural_network_architectures_2025_01/tree/main/seminar_02)
