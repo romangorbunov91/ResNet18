@@ -1,7 +1,7 @@
 {
   "model": {
     "name": "customResNet18",
-    "layers_num": 4,
+    "layers_num": 3,
     "block_size": 2,
     "activation": "ReLU"
   },
@@ -29,7 +29,7 @@
     "batch_size": 500
   },
   "solver": {
-    "type": "Adam",
+    "type": "AdamW",
     "base_lr": 0.001,
     "weight_decay": 0.0001
   },

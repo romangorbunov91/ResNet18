@@ -3,7 +3,6 @@ import numpy as np
 import torch
 import json
 import random
-from torchview import draw_graph
 from pathlib import Path
 from datetime import datetime
 import argparse
@@ -49,7 +48,7 @@ if __name__ == "__main__":
     
     model = ResNet18Trainer(configer)
     model.init_model()
-    train_history, train_num, val_num, class_num, model_param_count, model_net = model.train()
+    train_history, train_num, val_num, class_num, model_param_count, model_struct = model.train()
 
     train_log = [
     {
@@ -91,7 +90,7 @@ if __name__ == "__main__":
             "final_train_acc": train_history["train_accuracy"][-1],
             "final_val_acc": train_history["val_accuracy"][-1],
             },
-        "model_architecture": str(model_net),
+        "model_architecture": model_struct,
         "train_log": train_log
     }
     logs_dir = Path(configer.get("checkpoints", "logs_dir"))
@@ -101,11 +100,11 @@ if __name__ == "__main__":
     with open(logs_dir / (configer.output_file_name + '.json'), "w") as f:
         json.dump(output_dict, f, indent=4)
         
+    '''
     img_dir = Path("./readme_img/")
     if not os.path.exists(img_dir):
         os.makedirs(img_dir)
     img_size = configer.get('dataset', 'img_size')
-    '''
     model_graph = draw_graph(
         model_net, 
         input_size=(1, *img_size),
