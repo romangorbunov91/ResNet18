@@ -83,11 +83,7 @@ Output
 - `train` - основной цикл обучения/валидации по эпохам;
 - `update_metrics` - аккумулирование losses/accuracy посредством [average_meter.py](src\utils\average_meter.py).
 
-Рекомендуется работать с моделью посредством [main.py](src\main.py).
-
-```
-python src/main.py --hypes src\hyperparameters\config.json
-```
+Рекомендуется работать с моделью из терминала посредством [main.py](src\main.py).
 
 **Запуск на обучение**
 ```
@@ -118,11 +114,14 @@ python src\main.py --hypes src\hyperparameters\config.json --resume checkpoints\
 
 ### Выводы по базовой модели
 
-- После 10й эпохи обучения качество на валидации не меняется, модель переходит в переобучение.
-- Достигается точность на валидации около 55%.
+- После 10й эпохи обучения loss/accuracy на валидации не улучшаются; дальнейшее обучение может привести к переобучению модели.
+- Архитектура обеспечивает точность на валидации около **55%**.
 
 ## Часть 3: Поэтапная оптимизация модели
 ### 3.1: Оптимизация количества каналов
+
+Сравниваются 2 архитектуры: `[2, 2, 2, 2]` и `[2, 2, 2]` с 256 каналами на выхода в каждой.
+
 #### Архитектура с меньшим количеством слоев: `[2, 2, 2]`
 - `"layers_num": 3`
 - `"block_size": 2`
@@ -142,28 +141,20 @@ python src\main.py --hypes src\hyperparameters\config.json --resume checkpoints\
 | `Linear(256→10)`                                   | `(B, 10)`         |
 | Output                                             | `(B, 10)`         |
 
+<p align="center" width="100%">
+  <img src="./readme_img/loss_acc_4x2_vs_3x2_ReLU_Adam.png"
+  style="background-color: white; padding: 0;
+  width="100%" />
+</p>
+
+| Конфигурация | Параметры | Val Accuracy |
+|--------------|-----------|--------------|
+| [2,2,2,2]    | 2.8M      | XX.X%        |
+| [2,2,2]      | 2.8M      | XX.X%        |
 
 ### 3.2: Эксперименты с количеством residual блоков
 
-#### Архитектура с увеличенной глубиной слоев `[3, 3, 3, 3]`
-- `"layers_num": 4`
-- `"block_size": 3`
-
-| Layer / Operation                                  | Shape / Size      |
-|----------------------------------------------------|-------------------|
-| Input                                              | `(B, 3, 64, 64)`  |
-| `Conv2d(3→32, kernel_size=7, stride=2, padding=3)` | `(B, 32, 32, 32)` |
-| `BatchNorm2d(32)`                                  | `(B, 32, 32, 32)` |
-| `activation`                                       | `(B, 32, 32, 32)` |
-| `MaxPool2d(kernel_size=3, stride=1, padding=1)`    | `(B, 32, 32, 32)` |
-| `Layer0`: 3× `BasicBlock` (32 channels, stride=2)  | `(B, 32, 16, 16)` |
-| `Layer1`: 3× `BasicBlock` (64 channels, stride=2)  | `(B, 64, 8, 8)`   |
-| `Layer2`: 3× `BasicBlock` (128 channels, stride=2) | `(B, 128, 4, 4)`  |
-| `Layer3`: 3× `BasicBlock` (256 channels, stride=2) | `(B, 256, 2, 2)`  |
-| `AdaptiveAvgPool2d(output_size=(1, 1))`            | `(B, 256, 1, 1)`  |
-| `Flatten()`                                        | `(B, 256)`        |
-| `Linear(256→10)`                                   | `(B, 10)`         |
-| Output                                             | `(B, 10)`         |
+Сравниваются 3 архитектуры: `[1, 1, 1, 1]`, `[2, 2, 2, 2]`, `[3, 3, 3, 3]`.
 
 #### Архитектура с уменьшенной глубиной слоев `[1, 1, 1, 1]`
 - `"layers_num": 4`
@@ -185,9 +176,46 @@ python src\main.py --hypes src\hyperparameters\config.json --resume checkpoints\
 | `Linear(256→10)`                                   | `(B, 10)`         |
 | Output                                             | `(B, 10)`         |
 
+
+#### Архитектура с увеличенной глубиной слоев `[3, 3, 3, 3]`
+- `"layers_num": 4`
+- `"block_size": 3`
+
+| Layer / Operation                                  | Shape / Size      |
+|----------------------------------------------------|-------------------|
+| Input                                              | `(B, 3, 64, 64)`  |
+| `Conv2d(3→32, kernel_size=7, stride=2, padding=3)` | `(B, 32, 32, 32)` |
+| `BatchNorm2d(32)`                                  | `(B, 32, 32, 32)` |
+| `activation`                                       | `(B, 32, 32, 32)` |
+| `MaxPool2d(kernel_size=3, stride=1, padding=1)`    | `(B, 32, 32, 32)` |
+| `Layer0`: 3× `BasicBlock` (32 channels, stride=2)  | `(B, 32, 16, 16)` |
+| `Layer1`: 3× `BasicBlock` (64 channels, stride=2)  | `(B, 64, 8, 8)`   |
+| `Layer2`: 3× `BasicBlock` (128 channels, stride=2) | `(B, 128, 4, 4)`  |
+| `Layer3`: 3× `BasicBlock` (256 channels, stride=2) | `(B, 256, 2, 2)`  |
+| `AdaptiveAvgPool2d(output_size=(1, 1))`            | `(B, 256, 1, 1)`  |
+| `Flatten()`                                        | `(B, 256)`        |
+| `Linear(256→10)`                                   | `(B, 10)`         |
+| Output                                             | `(B, 10)`         |
+
+<p align="center" width="100%">
+  <img src="./readme_img/loss_acc_4x1_vs_4x2_vs_4x3_ReLU_Adam.png"
+  style="background-color: white; padding: 0;
+  width="100%" />
+</p>
+
+| Конфигурация | Параметры | Val Accuracy | Epoch (steady) |
+|--------------|-----------|--------------|----------------|
+| [1,1,1,1]    | 1.2M      | XX.X%        |                |
+| [2,2,2,2]    | 2.8M      | XX.X%        |                |
+| [3,3,3,3]    | 4.4M      | XX.X%        |                |
+
 ### 3.3: Эксперименты с функциями активации
 
 
+### Выводы по оптимизации модели
+- В сравнении архитектур `[2, 2, 2, 2]` и `[2, 2, 2]` лучше оказалась конфигурация ...
+- Анализ: какая глубина оптимальна? Есть ли переобучение у более глубоких моделей? Какое количество блоков работает лучше?
+- Вывод по функциям активации
 
 ## Часть 4: Финальная модель и тестирование
 
@@ -223,41 +251,65 @@ python src\main.py --hypes src\hyperparameters\config.json --resume checkpoints\
 - Есть ли признаки переобучения (большая разница между train и val)?
 
 
-Визуализация через https://netron.app/
+## Reference
+- [Полный текст задания](https://github.com/physicorym/designing_neural_network_architectures_2025_01/tree/main/seminar_02)
 
-## Getting Started
-These instructions will give you a copy of the project up and running on your local machine for development and testing 
-purposes. There isn't much to do, just install the prerequisites and download all the files.
+## Приложения
 
-### Prerequisites
-Create an environment into the folder `.venv`
+### Работа с проектом
+#### 1. Скачайте файлы репозитория
+#### 2. Скачайте датасет [tiny-imagenet-200](https://disk.yandex.ru/d/adWo9fVCLuVQ0Q)
+#### 3. Создайте окружение в директории `.venv`
 ```
 python -m venv .venv
 ```
-
-Activate the environment
+#### 4. Активируйте окружение
 ```
 .venv\Scripts\activate
 ```
-
-Run the command:
+#### 5. Установите библиотеки
 ```
 pip install -r requirements.txt
 ```
 
-## Download datasets
-### tiny-imagenet-200
-https://disk.yandex.ru/d/adWo9fVCLuVQ0Q
+### Визуализация архитектур
+#### Архитектура базовая (baseline): `[2, 2, 2, 2]`
+- `"layers_num": 4`
+- `"block_size": 2`
 
+<p align="center" width="100%">
+  <img src="./readme_img/mdl_4x2_ReLU_Adam.png"
+  style="background-color: white; padding: 0;
+  width="100%" />
+</p>
 
-```
-pip freeze > requirements.txt
-```
+#### Архитектура с меньшим количеством слоев: `[2, 2, 2]`
+- `"layers_num": 3`
+- `"block_size": 2`
 
+<p align="center" width="100%">
+  <img src="./readme_img/mdl_3x2_ReLU_Adam.png"
+  style="background-color: white; padding: 0;
+  width="100%" />
+</p>
 
+#### Архитектура с уменьшенной глубиной слоев `[1, 1, 1, 1]`
+- `"layers_num": 4`
+- `"block_size": 1`
 
-## Usage
-см. раздел
+<p align="center" width="100%">
+  <img src="./readme_img/mdl_4x1_ReLU_Adam.png"
+  style="background-color: white; padding: 0;
+  width="100%" />
+</p>
 
-## Reference
-- [Полный текст задания](https://github.com/physicorym/designing_neural_network_architectures_2025_01/tree/main/seminar_02)
+#### Архитектура с увеличенной глубиной слоев `[3, 3, 3, 3]`
+- `"layers_num": 4`
+- `"block_size": 3`
+
+<p align="center" width="100%">
+  <img src="./readme_img/mdl_4x3_ReLU_Adam.png"
+  style="background-color: white; padding: 0;
+  width="100%" />
+</p>
+
