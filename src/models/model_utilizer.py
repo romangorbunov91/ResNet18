@@ -16,6 +16,7 @@ class ModelUtilizer(object):
         self.configer = configer
         self.device = torch.device(self.configer.device)
         print(f"Device (model_utilizer.py): {self.device}")
+        self.output_file_name = self.configer.output_file_name
         self.save_policy = self.configer.get("checkpoints", "save_policy")
         if self.save_policy == "all":
             self.save = self.save_all
@@ -122,9 +123,9 @@ class ModelUtilizer(object):
         if not os.path.exists(checkpoints_dir):
             os.makedirs(checkpoints_dir)
         if self.save_policy == "all":
-            latest_name = '{}_{}_{}.pth'.format(self.configer.get('checkpoints', 'save_name'), self.configer.get("model", "name"), epoch)
+            latest_name = '{}_epoch_{}.pth'.format(self.output_file_name, epoch)
         elif self.save_policy == "best":
-            latest_name = 'best_{}_{}.pth'.format(self.configer.get('checkpoints', 'save_name'), self.configer.get("model", "name"))
+            latest_name = 'best_{}.pth'.format(self.output_file_name)
         else:
             raise ValueError(f'Policy {self.save_policy} is unknown.')
    

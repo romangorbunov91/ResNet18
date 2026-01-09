@@ -92,12 +92,12 @@ python src\main.py --hypes src\hyperparameters\config.json
 
 **Запуск на дообучение**
 ```
-python src\main.py --hypes src\hyperparameters\config.json --resume checkpoints\tiny-imagenet-200\best_train_customResNet18.pth
+python src\main.py --hypes src\hyperparameters\config.json --resume checkpoints\tiny-imagenet-200\best_mdl_4x2_ReLU_Adam.pth
 ```
 
 **Запуск на тест**
 ```
-python src\main.py --hypes src\hyperparameters\config.json --resume checkpoints\tiny-imagenet-200\best_train_customResNet18.pth --phase test
+python src\main.py --hypes src\hyperparameters\config.json --resume checkpoints\tiny-imagenet-200\best_mdl_4x2_ReLU_Adam.pth --phase test
 ```
 
 Логи обучения хранятся в [train_logs](train_logs).

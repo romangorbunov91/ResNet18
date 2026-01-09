@@ -35,7 +35,6 @@
   },
   "checkpoints": {
     "save_policy": "best",
-    "save_name": "train",
     "save_dir": "./checkpoints/",
     "logs_dir": "./train_logs/",
     "early_stop_number": 0

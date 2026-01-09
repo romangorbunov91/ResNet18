@@ -38,6 +38,14 @@ if __name__ == "__main__":
     torch.autograd.set_detect_anomaly(True)
     configer = Configer(args)
     configer.device = configer.get("device").lower() if torch.cuda.is_available() else 'cpu'
+
+    configer.output_file_name = (
+        f"mdl_"
+        f"{str(configer.get('model', 'layers_num'))}x"
+        f"{str(configer.get('model', 'block_size'))}_"
+        f"{configer.get('model', 'activation')}_"
+        f"{configer.get('solver', 'type')}"
+    )
     
     model = ResNet18Trainer(configer)
     model.init_model()
@@ -90,26 +98,20 @@ if __name__ == "__main__":
     if not os.path.exists(logs_dir):
         os.makedirs(logs_dir)
     
-    log_file_name = (
-        f"mdl_"
-        f"{str(configer.get('model', 'layers_num'))}x"
-        f"{str(configer.get('model', 'block_size'))}_"
-        f"{configer.get('model', 'activation')}_"
-        f"{configer.get('solver', 'type')}.json"
-    )
-    
-    with open(logs_dir / log_file_name, "w") as f:
+    with open(logs_dir / (configer.output_file_name + '.json'), "w") as f:
         json.dump(output_dict, f, indent=4)
         
     img_dir = Path("./readme_img/")
     if not os.path.exists(img_dir):
         os.makedirs(img_dir)
     img_size = configer.get('dataset', 'img_size')
+    '''
     model_graph = draw_graph(
         model_net, 
         input_size=(1, *img_size),
         expand_nested=True,
         save_graph=True,
-        filename = img_dir / log_file_name
+        filename = img_dir / configer.output_file_name
     )
     model_graph.visual_graph
+    '''
