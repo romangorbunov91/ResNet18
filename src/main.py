@@ -41,7 +41,7 @@ if __name__ == "__main__":
     
     model = ResNet18Trainer(configer)
     model.init_model()
-    train_history, train_num, val_num, class_num, model_param_count, model_str = model.train()
+    train_history, train_num, val_num, class_num, model_param_count, model_net = model.train()
 
     train_log = [
     {
@@ -83,7 +83,7 @@ if __name__ == "__main__":
             "final_train_acc": train_history["train_accuracy"][-1],
             "final_val_acc": train_history["val_accuracy"][-1],
             },
-        "model_architecture": model_str,
+        "model_architecture": str(model_net),
         "train_log": train_log
     }
     logs_dir = Path(configer.get("checkpoints", "logs_dir"))
@@ -106,10 +106,10 @@ if __name__ == "__main__":
         os.makedirs(img_dir)
     img_size = configer.get('dataset', 'img_size')
     model_graph = draw_graph(
-        model, 
+        model_net, 
         input_size=(1, *img_size),
         expand_nested=True,
         save_graph=True,
-        filename = img_dir / img_dir
+        filename = img_dir / log_file_name
     )
     model_graph.visual_graph

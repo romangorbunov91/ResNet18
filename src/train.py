@@ -239,7 +239,7 @@ class ResNet18Trainer(object):
             len(self.val_loader.dataset), \
             len(self.train_loader.dataset.class_names), \
             self.model_size, \
-            str(self.net)
+            self.net
     
     def update_metrics(self, split: str, loss, bs, accuracy):
         self.losses[split].update(loss, bs)
