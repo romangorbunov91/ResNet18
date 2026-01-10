@@ -1,6 +1,6 @@
 {
     "metadata": {
-        "run_id": "20260109_190741",
+        "run_id": "20260110_130436",
         "model": {
             "name": "customResNet18",
             "layers_num": 3,
@@ -10,7 +10,11 @@
         },
         "dataset": {
             "name": "tiny-imagenet-200",
-            "img_size": [3, 64, 64],
+            "img_size": [
+                3,
+                64,
+                64
+            ],
             "train_size": 5000,
             "val_size": 500,
             "class_size": 10,
