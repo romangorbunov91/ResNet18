@@ -1,6 +1,6 @@
 {
     "metadata": {
-        "run_id": "20260110_131629",
+        "run_id": "20260110_133409",
         "model": {
             "name": "customResNet18",
             "layers_num": 3,
