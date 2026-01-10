@@ -248,6 +248,12 @@ python src\main.py --hypes src\hyperparameters\config.json --resume checkpoints\
 | n03796401    | moving van   | 0.6964      | 0.7800   | 0.7358     | 50        |
 | n04254777    | sock         | 0.6667      | 0.6800   | 0.6733     | 50        |
 
+<p align="center" width="100%">
+  <img src="./readme_img/confusion_matrix.png"
+  style="background-color: white; padding: 0;
+  width="100%" />
+</p>
+
 ### 4.3: Визуальный анализ
 
 <p align="center" width="100%">
