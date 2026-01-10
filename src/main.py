@@ -83,12 +83,8 @@ if __name__ == "__main__":
             "device": configer.device,
             "workers": configer.get("data", "workers"),
             "batch_size": configer.get("data", "batch_size"),
-            "solver": {
-                "type": configer.get("solver", "type"),
-                "base_lr": configer.get("solver", "base_lr"),
-                "weight_decay": configer.get("solver", "weight_decay"),
-                "seed": SEED
-                }
+            "solver": configer.get("solver", "type"),
+            "seed": SEED
             },
         "summary": {
             "best_val_acc": max(train_history["val_accuracy"]),
