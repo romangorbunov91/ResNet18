@@ -28,9 +28,14 @@
             ]
         },
         "device": "cuda",
+        "workers": 4,
         "batch_size": 500,
-        "optimizer": "Adam",
-        "seed": 1991
+        "solver": {
+            "type": "Adam",
+            "base_lr": 0.001,
+            "weight_decay": 0.0001,
+            "seed": 1991
+        }
     },
     "summary": {
         "best_val_acc": 0.664,

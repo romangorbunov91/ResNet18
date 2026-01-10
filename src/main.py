@@ -71,7 +71,7 @@ if __name__ == "__main__":
                 "block_size": configer.get("model", "block_size"),
                 "activation": configer.get("model", "activation"),
                 "param_count": model_param_count
-            },
+                },
             "dataset": {
                 "name": configer.get("dataset", "name"),
                 "img_size": configer.get("dataset", "img_size"),
@@ -79,11 +79,16 @@ if __name__ == "__main__":
                 "val_size": val_num,
                 "class_size": class_num,
                 "selected_classes": configer.get("dataset", "selected_classes")
-            },
+                },
             "device": configer.device,
+            "workers": configer.get("data", "workers"),
             "batch_size": configer.get("data", "batch_size"),
-            "optimizer": configer.get("solver", "type"),
-            "seed": SEED
+            "solver": {
+                "type": configer.get("solver", "type"),
+                "base_lr": configer.get("solver", "base_lr"),
+                "weight_decay": configer.get("solver", "weight_decay"),
+                "seed": SEED
+                }
             },
         "summary": {
             "best_val_acc": max(train_history["val_accuracy"]),
@@ -100,18 +105,3 @@ if __name__ == "__main__":
     
     with open(logs_dir / (configer.output_file_name + '.json'), "w") as f:
         json.dump(output_dict, f, indent=4)
-        
-    '''
-    img_dir = Path("./readme_img/")
-    if not os.path.exists(img_dir):
-        os.makedirs(img_dir)
-    img_size = configer.get('dataset', 'img_size')
-    model_graph = draw_graph(
-        model_net, 
-        input_size=(1, *img_size),
-        expand_nested=True,
-        save_graph=True,
-        filename = img_dir / configer.output_file_name
-    )
-    model_graph.visual_graph
-    '''
