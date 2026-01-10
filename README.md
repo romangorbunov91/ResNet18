@@ -288,22 +288,6 @@ python src\main.py --hypes src\hyperparameters\config.json --resume checkpoints\
 
 ## Приложения
 
-### Работа с проектом
-#### 1. Скачайте файлы репозитория
-#### 2. Скачайте датасет [tiny-imagenet-200](https://disk.yandex.ru/d/adWo9fVCLuVQ0Q)
-#### 3. Создайте окружение в директории `.venv`
-```
-python -m venv .venv
-```
-#### 4. Активируйте окружение
-```
-.venv\Scripts\activate
-```
-#### 5. Установите библиотеки
-```
-pip install -r requirements.txt
-```
-
 ### Визуализация архитектур
 #### Архитектура базовая (baseline): `[2, 2, 2, 2]`
 - `"layers_num": 4`
@@ -345,3 +329,18 @@ pip install -r requirements.txt
   width="100%" />
 </p>
 
+### Работа с проектом
+#### 1. Скачайте файлы репозитория
+#### 2. Скачайте датасет [tiny-imagenet-200](https://disk.yandex.ru/d/adWo9fVCLuVQ0Q)
+#### 3. Создайте окружение в директории `.venv`
+```
+python -m venv .venv
+```
+#### 4. Активируйте окружение
+```
+.venv\Scripts\activate
+```
+#### 5. Установите библиотеки
+```
+pip install -r requirements.txt
+```
