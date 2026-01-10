@@ -312,22 +312,22 @@ pip install -r requirements.txt
   width="100%" />
 </p>
 
-#### Архитектура с уменьшенной глубиной слоев `[1, 1, 1, 1]`
+#### Архитектура с уменьшенной глубиной слоев `[1, 1, 1]`
 - `"layers_num": 4`
 - `"block_size": 1`
 
 <p align="center" width="100%">
-  <img src="./readme_img/mdl_4x1_ReLU_Adam.png"
+  <img src="./readme_img/mdl_3x1_ReLU_Adam.png"
   style="background-color: white; padding: 0;
   width="100%" />
 </p>
 
-#### Архитектура с увеличенной глубиной слоев `[3, 3, 3, 3]`
+#### Архитектура с увеличенной глубиной слоев `[3, 3, 3]`
 - `"layers_num": 4`
 - `"block_size": 3`
 
 <p align="center" width="100%">
-  <img src="./readme_img/mdl_4x3_ReLU_Adam.png"
+  <img src="./readme_img/mdl_3x3_ReLU_Adam.png"
   style="background-color: white; padding: 0;
   width="100%" />
 </p>
