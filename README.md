@@ -313,7 +313,7 @@ pip install -r requirements.txt
 </p>
 
 #### Архитектура с уменьшенной глубиной слоев `[1, 1, 1]`
-- `"layers_num": 4`
+- `"layers_num": 3`
 - `"block_size": 1`
 
 <p align="center" width="100%">
@@ -323,7 +323,7 @@ pip install -r requirements.txt
 </p>
 
 #### Архитектура с увеличенной глубиной слоев `[3, 3, 3]`
-- `"layers_num": 4`
+- `"layers_num": 3`
 - `"block_size": 3`
 
 <p align="center" width="100%">
