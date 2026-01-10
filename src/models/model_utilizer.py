@@ -35,12 +35,11 @@ class ModelUtilizer(object):
         """Load optimizer and adjust learning rate during training.
 
             Args:
-                net (torch.nn.Module): Module in use
-                iters (int): current iteration number
+                net (torch.nn.Module): Module in use.
 
             Returns:
-                optimizer (torch.optim.optimizer): PyTorch Optimizer
-                lr (float): Learning rate for training procedure
+                optimizer (torch.optim.optimizer): PyTorch Optimizer.
+                lr (float): Learning rate for training procedure.
 
         """
         optim = self.configer.get('solver', 'type')

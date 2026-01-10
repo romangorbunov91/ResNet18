@@ -1,14 +1,14 @@
 from pathlib import Path
 
+import numpy as np
+from tqdm import tqdm
 import torch
 import torch.nn as nn
-import numpy as np
 import torchvision.transforms as transforms
 
 # Import Utils.
-from tqdm import tqdm
-from utils.average_meter import AverageMeter
 from torch.utils.data import DataLoader
+from utils.average_meter import AverageMeter
 
 # Import Datasets.
 from datasets.TinyImageNetDataset import TinyImageNetDataset
@@ -76,9 +76,9 @@ class ResNet18Trainer(object):
     def init_model(self):
         """Initialize model and other data for procedure"""
         
-        img_size = self.configer.get('dataset', 'img_size')
-        
         self.loss = nn.CrossEntropyLoss().to(self.device)
+        
+        img_size = self.configer.get('dataset', 'img_size')
         self.net = customResNet18(
             num_classes = self.n_classes,
             layers_config = self.configer.get("model", "layers_num")*[self.configer.get("model", "block_size")],
