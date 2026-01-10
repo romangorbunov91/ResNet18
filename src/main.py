@@ -74,6 +74,7 @@ if __name__ == "__main__":
             },
             "dataset": {
                 "name": configer.get("dataset", "name"),
+                "img_size": configer.get("dataset", "img_size"),
                 "train_size": train_num,
                 "val_size": val_num,
                 "class_size": class_num,
