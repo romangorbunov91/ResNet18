@@ -102,7 +102,7 @@ python src\main.py --hypes src\hyperparameters\config.json --resume checkpoints\
 
 Логи обучения хранятся в [train_logs](train_logs).
 
-#### 2.5: Визуализация базовых результатов
+### 2.5. Визуализация базовых результатов
 
 Графики построены в [main_notebook.ipynb](main_notebook.ipynb).
 
@@ -118,7 +118,7 @@ python src\main.py --hypes src\hyperparameters\config.json --resume checkpoints\
 - Архитектура обеспечивает точность на валидации **60.6%** (best mean accuracy).
 
 ## Часть 3: Поэтапная оптимизация модели
-### 3.1: Оптимизация количества каналов
+### 3.1. Оптимизация количества каналов
 
 Сравниваются 2 архитектуры: `[2, 2, 2, 2]` и `[2, 2, 2]` с 256 каналами на выходе в каждой.
 
@@ -154,7 +154,7 @@ python src\main.py --hypes src\hyperparameters\config.json --resume checkpoints\
 
 Архитектура с меньшим количеством слоев быстрее обучается и достигает большую точность на валидации; далее принята конфигурация из 3х слоев.
 
-### 3.2: Эксперименты с количеством residual блоков
+### 3.2. Эксперименты с количеством residual блоков
 
 Сравниваются 3 архитектуры: `[1, 1, 1]`, `[2, 2, 2]`, `[3, 3, 3]`.
 
@@ -210,7 +210,7 @@ python src\main.py --hypes src\hyperparameters\config.json --resume checkpoints\
 
 Все 3 рассмотренные конфигурации демонстрируют похожую динамику обучения и точность на валидации. Выберем конфигурацию `[2, 2, 2]`, т.к. быстрее других достигла лучшей точности.
 
-### 3.3: Эксперименты с функциями активации
+### 3.3. Эксперименты с функциями активации
 
 <p align="center" width="100%">
   <img src="./readme_img/loss_acc_3x2_ReLU_vs_Leaky_ReLU_vs_ELU_vs_GELU_Adam.png"
@@ -221,7 +221,7 @@ python src\main.py --hypes src\hyperparameters\config.json --resume checkpoints\
 По скорости обучения и достигаемой точности на валидации практически нет отличий. Модель с функцией активации `ELU` демонстрирует заметно меньший темп на обучении, но это может быть связанно с неудачной инициализацией начальных весов.
 
 ## Часть 4: Финальная модель и тестирование
-### 4.1: Создание финальной модели
+### 4.1. Создание финальной модели
 
 Финальная модель построена на конфигурации `[2, 2, 2]` с функциями активации `ReLU`.
 
@@ -233,7 +233,7 @@ python src\main.py --hypes src\hyperparameters\config.json --resume checkpoints\
 
 Оба решателя, `Adam` и `AdamW`, в среднем демонстрируют одинаковые результаты.
 
-### 4.2: Тестирование на test set
+### 4.2. Тестирование на test set
 
 | wordnet_id   | classname    | Precision   | Recall   | F1-score   | Support   |
 |--------------|--------------|-------------|----------|------------|-----------|
@@ -254,7 +254,7 @@ python src\main.py --hypes src\hyperparameters\config.json --resume checkpoints\
   width="100%" />
 </p>
 
-### 4.3: Визуальный анализ
+### 4.3. Визуальный анализ
 
 <p align="center" width="100%">
   <img src="./readme_img/test_demo.png"
@@ -262,7 +262,7 @@ python src\main.py --hypes src\hyperparameters\config.json --resume checkpoints\
   width="100%" />
 </p>
 
-### 4.4: Сравнительная таблица всех экспериментов
+### 4.4. Сравнительная таблица всех экспериментов
 
 Создайте итоговую таблицу со всеми результатами:
 
@@ -348,3 +348,4 @@ python -m venv .venv
 ```
 pip install -r requirements.txt
 ```
+В [main_notebook.ipynb](main_notebook.ipynb) скрипт визуализации архитектур на основе `draw_graph` требует установки [Graphviz](https://graphviz.org/download/).
