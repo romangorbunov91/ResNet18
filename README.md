@@ -18,7 +18,7 @@
 
 ### 2.1. Реализация Basic Block
 
-В [model_structure.py](src\models\model_structure.py) реализован `class BasicBlock` с выбором функции активации в слое `activation` при инициализации.
+В [model_structure.py](src\models\model_structure.py) реализован базовый residual блок в виде класса `BasicBlock` с возможностью выбора при инициализации функции активации слоя `activation`.
 
 ```
 Input →  →  →  →  →  →  →  →  →  →  →  →  →  →  →  →  →  →  →  →  →  →  →  →
@@ -84,22 +84,13 @@ Output
 - `update_metrics` - аккумулирование losses/accuracy посредством [average_meter.py](src\utils\average_meter.py).
 
 Рекомендуется работать с моделью из терминала посредством [main.py](src\main.py).
-
-**Запуск на обучение**
 ```
 python src\main.py --hypes src\hyperparameters\config.json 
 ```
-
-**Запуск на дообучение**
+или
 ```
 python src\main.py --hypes src\hyperparameters\config.json --resume checkpoints\tiny-imagenet-200\best_mdl_4x2_ReLU_Adam.pth
 ```
-
-**Запуск на тест**
-```
-python src\main.py --hypes src\hyperparameters\config.json --resume checkpoints\tiny-imagenet-200\best_mdl_4x2_ReLU_Adam.pth --phase test
-```
-
 Логи обучения хранятся в [train_logs](train_logs).
 
 ### 2.5. Визуализация базовых результатов
@@ -120,7 +111,7 @@ python src\main.py --hypes src\hyperparameters\config.json --resume checkpoints\
 ## Часть 3: Поэтапная оптимизация модели
 ### 3.1. Оптимизация количества каналов
 
-Сравниваются 2 архитектуры: `[2, 2, 2, 2]` и `[2, 2, 2]` с 256 каналами на выходе в каждой.
+Сравниваются 2 архитектуры: `[2, 2, 2, 2]` и `[2, 2, 2]` с **256 каналами** на выходе в каждой.
 
 #### Архитектура с меньшим количеством слоев: `[2, 2, 2]`
 - `"layers_num": 3`
@@ -152,7 +143,7 @@ python src\main.py --hypes src\hyperparameters\config.json --resume checkpoints\
 | [2, 2, 2, 2] | 2.8M      | 60.6%             |
 | [2, 2, 2]    | 2.8M      | 66.4%             |
 
-Архитектура с меньшим количеством слоев быстрее обучается и достигает большую точность на валидации; далее принята конфигурация из 3х слоев.
+Архитектура с меньшим количеством слоев быстрее обучается и достигает большую точность на валидации; эта конфигурация из 3х слоев взята в дальнейшую работу как лучшая.
 
 ### 3.2. Эксперименты с количеством residual блоков
 
@@ -208,9 +199,11 @@ python src\main.py --hypes src\hyperparameters\config.json --resume checkpoints\
 | [2,2,2]      | 2.8M      | 66.4%             | 26           |
 | [3,3,3]      | 4.3M      | 65.4%             | 29           |
 
-Все 3 рассмотренные конфигурации демонстрируют похожую динамику обучения и точность на валидации. Выберем конфигурацию `[2, 2, 2]`, т.к. быстрее других достигла лучшей точности.
+Все 3 рассмотренные конфигурации демонстрируют похожую динамику обучения и точность на валидации. Выбрана конфигурация `[2, 2, 2]`, т.к. быстрее других достигла лучшей точности.
 
 ### 3.3. Эксперименты с функциями активации
+
+В [model_structure.py](src\models\model_structure.py) создана функция `def set_activation(activation: str) -> nn.Module:`.
 
 <p align="center" width="100%">
   <img src="./readme_img/loss_acc_3x2_ReLU_vs_Leaky_ReLU_vs_ELU_vs_GELU_Adam.png"
@@ -256,11 +249,15 @@ python src\main.py --hypes src\hyperparameters\config.json --resume checkpoints\
 
 ### 4.3. Визуальный анализ
 
+Из тестового набора изображений выбраны 10 случайных примеров - по 1 из классов, на которых обучалась модель.
+
 <p align="center" width="100%">
   <img src="./readme_img/test_demo.png"
   style="background-color: white; padding: 0;
   width="100%" />
 </p>
+
+3 примера из 10 отнесены к неверному классу.
 
 ### 4.4. Сравнительная таблица всех экспериментов
 
