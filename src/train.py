@@ -107,9 +107,9 @@ class ResNet18Trainer(object):
             Dataset = TinyImageNetDataset
             
             normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-
+            
             self.train_transforms = transforms.Compose([
-                transforms.Resize((72, 72)),
+                transforms.Resize(tuple([int(img_size[1] * 1.125)]*2)),
                 transforms.RandomResizedCrop(img_size[1], scale=(0.8, 1.0)),
                 transforms.RandomHorizontalFlip(p=0.5),
                 transforms.RandomRotation(10),
