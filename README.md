@@ -2,14 +2,14 @@
 Поэтапная разработка кастомной ResNet18 модели-классификатора с анализом влияния различных архитектурных решений на производительность.
 
 ## Часть 1: Подготовка данных
-Создан датакласс [TinyImageNetDataset.py](src\datasets\TinyImageNetDataset.py), наследующий от `torch.utils.data.Dataset` следующие методы:
+Создан датакласс [TinyImageNetDataset.py](src/datasets/TinyImageNetDataset.py), наследующий от `torch.utils.data.Dataset` следующие методы:
 - `__init__`: инициализация путей к данным и аннотациям, загрузка тренировочного и валидационного датасетов по выбранным классам;
 - `__len__`: возврат количества примеров в датасете;
 - `__getitem__`: загрузка и возврат одного примера (изображение + метка).
 
 ## Часть 2: Базовая архитектура ResNet18
 
-В [model_structure.py](src\models\model_structure.py) реализован `class customResNet18` с возможностью инициализации архитектуры модели под следующие входные параметры:
+В [model_structure.py](src/models/model_structure.py) реализован `class customResNet18` с возможностью инициализации архитектуры модели под следующие входные параметры:
 - `num_classes` - количество классов на выходе; например, `num_classes=10`;
 - `layers_config` - слои модели в формате списка; например, `[2, 2, 2, 2]` - `"layers_num": 4`, `"block_size": 2`;
 - `activation` - функция активации (`ReLU`, `LeakyReLU`, `ELU`, или `GELU`);
@@ -18,7 +18,7 @@
 
 ### 2.1. Реализация Basic Block
 
-В [model_structure.py](src\models\model_structure.py) реализован базовый residual блок в виде класса `BasicBlock` с возможностью выбора при инициализации функции активации слоя `activation`.
+В [model_structure.py](src/models/model_structure.py) реализован базовый residual блок в виде класса `BasicBlock` с возможностью выбора при инициализации функции активации слоя `activation`.
 
 ```
 Input →  →  →  →  →  →  →  →  →  →  →  →  →  →  →  →  →  →  →  →  →  →  →  →
