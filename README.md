@@ -68,22 +68,22 @@ Output
 ### 2.4. Скрипт обучения
 
 #### Конфигурирование проекта
-Гиперпараметры задаются в файле [config.json](src\hyperparameters\config.json), включая:
+Гиперпараметры задаются в файле [config.json](src/hyperparameters/config.json), включая:
 - архитектура модели: `layers_num`, `block_size`, `activation`;
 - выбранные классы датасета: `selected_classes`;
 - параметры обучения: `epochs`, `batch_size`, `solver`;
 - политика обучения: `save_policy` - "all", "best" (политика "early_stop" выбирается установкой параметра "early_stop_number" > 0).
 
 #### Обучение
-Обучение реализовано в [train.py](src\train.py) в виде класса `ResNet18Trainer` со следующими методами:
+Обучение реализовано в [train.py](src/train.py) в виде класса `ResNet18Trainer` со следующими методами:
 - `__init__` - инициализация переменных класса в соответствии с гиперпараметрами из файла конфигурации проекта;
 - `init_model` - установка функции ошибки, инициализация/загрузка модели, загрузка датасета;
 - `__train` - обучение по батчам;
 - `__val` - валидация по батчам;
 - `train` - основной цикл обучения/валидации по эпохам;
-- `update_metrics` - аккумулирование losses/accuracy посредством [average_meter.py](src\utils\average_meter.py).
+- `update_metrics` - аккумулирование losses/accuracy посредством [average_meter.py](src/utils/average_meter.py).
 
-Рекомендуется работать с моделью из терминала посредством [main.py](src\main.py).
+Рекомендуется работать с моделью из терминала посредством [main.py](src/main.py).
 ```
 python src\main.py --hypes src\hyperparameters\config.json 
 ```
@@ -203,7 +203,7 @@ python src\main.py --hypes src\hyperparameters\config.json --resume checkpoints\
 
 ### 3.3. Эксперименты с функциями активации
 
-В [model_structure.py](src\models\model_structure.py) создана функция `def set_activation(activation: str) -> nn.Module:`.
+В [model_structure.py](src/models/model_structure.py) создана функция `def set_activation(activation: str) -> nn.Module:`.
 
 <p align="center" width="100%">
   <img src="./readme_img/loss_acc_3x2_ReLU_vs_Leaky_ReLU_vs_ELU_vs_GELU_Adam.png"
