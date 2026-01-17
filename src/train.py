@@ -130,7 +130,7 @@ class ResNet18Trainer(object):
         # Setting Dataloaders.
         self.train_loader = DataLoader(
             Dataset(
-                self.data_path,
+                data_path = self.data_path,
                 split="train",
                 transform=self.train_transforms,
                 selected_classes=self.selected_classes
@@ -141,7 +141,7 @@ class ResNet18Trainer(object):
         
         self.val_loader = DataLoader(
             Dataset(
-                self.data_path,
+                data_path = self.data_path,
                 split="val",
                 transform=self.val_transforms,
                 selected_classes=self.selected_classes
