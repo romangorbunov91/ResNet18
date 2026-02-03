@@ -109,7 +109,7 @@ class ResNet18Trainer(object):
             normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
             
             self.train_transforms = transforms.Compose([
-                transforms.Resize(tuple([int(img_size[1] * 1.125)]*2), antialias=True),
+                transforms.Resize(tuple(int(x * 1.125) for x in mdl_input_size[-2:]), antialias=True),
                 transforms.RandomResizedCrop(img_size[1], scale=(0.8, 1.0)),
                 transforms.RandomHorizontalFlip(p=0.5),
                 transforms.RandomRotation(10),
@@ -119,7 +119,7 @@ class ResNet18Trainer(object):
             ])
 
             self.val_transforms = transforms.Compose([
-                transforms.Resize(tuple(img_size[1:]), antialias=True),
+                transforms.Resize(tuple(int(x * 1.125) for x in mdl_input_size[-2:]), antialias=True),
                 transforms.ToTensor(),
                 normalize,
             ])
